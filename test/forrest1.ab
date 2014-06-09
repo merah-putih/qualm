@@ -1,0 +1,11 @@
+abds([dry_leaves/0,storm/0]).
+
+forrest_fire <- lightning, enabler.
+enabler <- dry_leaves, leaves_on_ground.
+
+lightning <- storm.
+leaves_on_ground <- storm.
+
+expect(dry_leaves).
+expect(storm).
+

@@ -1,0 +1,3 @@
+abds([a / 0]).
+p <- q,consider(a).
+expect(a) <- r.

@@ -1,0 +1,139 @@
+:- import memberchk/2, length/2, append/3 from basics.
+:- import incr_assert/1, incr_assert_inval/1 from increval.
+:- import term_to_atom/2 from string.
+
+
+:- op(1110,xfy, '<-' ).         % Rule symbol
+:- op(1110,fy, '<-' ).         % Rule symbol
+
+
+collectPrefsArt(not(F),A,G_,Args) :- !,
+	collectPrefsArt(F,A,G,Args),
+	atom_concat('not_',G,G_).
+
+collectPrefsArt(assert(F),A,H,Args) :- !,
+	collectPrefsArt(F,A,G,Args),
+	G_ =.. [assert,G],
+	term_to_atom(G_,H).
+
+collectPrefsArt((H <- B),2,'#(r)',[ProH,ProB]) :- !,
+	comma_to_list(B,ListB),
+	term_to_atom(H,ProH),
+	term_to_atom(ListB,ProB).
+
+
+collectPrefsArt(F,Arity,H,T) :-
+	F =.. [H|T],
+	length(T,Arity).
+
+assertIfNot(G) :- G, !.
+assertIfNot(G) :- my_assert(G).
+
+incr_assert_inval_IfNot(G) :- G, !.
+incr_assert_inval_IfNot(G) :- incr_assert_inval(G).
+
+is_abducible(G) :-
+	functor(G,N,A),
+	get_sol(abds(L),L), memberchk(N/A,L).
+
+% interventables are non-abducible (abducibles are qualified for interventables, by default)
+is_interventable(M) :-
+	functor(M,N,A),
+	get_sol(intv(I),I), memberchk(N/A,I).
+
+is_lits(P,Arg) :-
+	length(Arg,Arity),
+	get_sol(lits(L),L),
+	(atom_concat('not_',Pos,P) ->
+	 memberchk(Pos/Arity,L);
+	 memberchk(P/Arity,L)
+	).
+	
+
+get_sol(G,_) :- G, !.
+get_sol(_,[]).
+
+my_assert(C) :- assert(C).
+
+my_incr_assert(C) :- incr_assert(C).
+
+my_incr_dyn(L) :-
+	functor(L,P,A),
+	(dynamic P/A as incremental).
+
+my_incr_dyn(H,A) :-
+	ProA is A+3,
+	(dynamic H/ProA as incremental).
+
+
+renamePred(Pref,Name,Suf,ModName) :-
+	name(Name,NR),
+	append(Pref,NR,NR1),
+	append(NR1,Suf,ModName1),
+	name(ModName,ModName1).
+
+processLit(prolog(P),_,I,I,_,P) :- !.
+processLit(not(prolog(P)),_,I,I,_,not(P)) :- !.
+processLit(not(H),ArgsH,I,O,TS,ProNotH) :- !,
+	renamePred("not_",H,[],Not_H),
+	processAtom(Not_H,ArgsH,I,O,TS,ProNotH).
+processLit(H,ArgsH,I,O,TS,ProH) :-
+	processAtom(H,ArgsH,I,O,TS,ProH).
+
+
+processAtom(H,Vars,I,O,TS,ProH) :-
+	ProH =.. [H,I,O,TS|Vars].
+
+/*
+processBodyLatest(prolog(P),_,P,I,I) :- !.
+processBodyLatest(not(prolog(P)),_,not(P),I,I) :- !.
+processBodyLatest((not(P),Arg,TS),(Not_P,Arg,I,O,TS),ProA,I,O) :- !,
+	renamePred("not_",P,[],Not_P),
+	processAtom(Not_P,Arg,I,O,TS,ProA).
+processBodyLatest((P,Arg,TS),(P,Arg,I,O,TS),ProA,I,O) :- 
+	processAtom(P,Arg,I,O,TS,ProA).
+*/
+
+processBodyLatest(not(prolog(P)),_,not(P),I,I) :- !.
+processBodyLatest(prolog(P),_,P,I,I) :- !.
+processBodyLatest((not(consider),Arg,TS),(not_consider,Arg,I,O,TS),ProB,I,O) :- !,
+	processAtom(not_consider,Arg,I,O,TS,ProB).	
+processBodyLatest((consider,Arg,TS),(consider,Arg,I,O,TS),ProB,I,O) :- !,
+	processAtom(consider,Arg,I,O,TS,ProB).	
+processBodyLatest((not(P),Arg,TS),(Not_P,Arg,I,O,TS),fluent(Not_P,Arg,I,O,TS),I,O) :- !,
+	renamePred("not_",P,[],Not_P).
+processBodyLatest((P,Arg,TS),(P,Arg,I,O,TS),fluent(P,Arg,I,O,TS),I,O).
+
+
+atom_compl(F,F_) :-
+	(atom_concat('not_',Pos,F) ->
+	 F_ = Pos; renamePred("not_",F,[],F_)).
+
+negLit((not A),A) :- !.
+negLit(A,(not A)).
+
+:- table undef/0 as opaque.
+
+undef :- tnot undef.
+
+%%%%
+
+ensure_ground(Abd) :-
+	(ground(Abd) -> true;
+	 make_ground(Abd) % need to be defined.
+	).
+
+%dummy definition of make_ground/1
+make_ground(_).
+
+
+
+%%%% DEBUGGING UTILITY %%%%
+
+:- import trie_property/2, trie_interned/2 from intern.
+
+
+ti(Trie,Res) :- trie_property(Handler,alias(Trie)), trie_interned(Res,Handler).
+
+ia(X) :- incr_assert(X).
+iai(X) :- incr_assert_inval(X).

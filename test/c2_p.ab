@@ -1,0 +1,6 @@
+abds([a / 0]).
+intv([p / 1]).
+p(_h917) <- not make_not(p(_h917)),q(1),consider(a).
+q(1).
+expect(a).
+p(_h1134) <- make(p(_h1134)).

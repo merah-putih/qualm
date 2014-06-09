@@ -1,0 +1,9 @@
+abds([tear_gas / 0,water_cannon / 0,fire / 0]).
+contain <- consider(tear_gas).
+inspect(contain) <- abduced(tear_gas).
+contain <- consider(water_cannon).
+inspect(contain) <- abduced(water_cannon).
+smoke <- consider(fire).
+inspect(smoke) <- abduced(fire).
+smoke <- abduced(tear_gas).
+inspect(smoke) <- abduced(tear_gas).

@@ -1,0 +1,4 @@
+abds([a/0]).
+
+p <- q, a.
+expect(a) <- r.

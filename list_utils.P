@@ -1,0 +1,22 @@
+:- import variant/2 from subsumes.
+
+write_list([X]) :- !, write(X), write('.').
+write_list([X|L]) :- write(X), write(','), write_list(L). 
+
+makeList(N,L) :-
+	makeList(N,N,L).
+
+makeList(_,0,[]) :- !.
+makeList(N,S,[_|T]) :-
+	NewS is S-1,
+	makeList(N,NewS,T).
+
+%memberO(X,[X|_]) :- !.
+memberO(X,[Y|_]) :- variant(X,Y), !.
+memberO(X,[Y|Z]) :- X @> Y, memberO(X,Z).
+
+insertElem(E,[],[E]).
+insertElem(E,[X|T],[X|T]) :- variant(E,X), !.
+insertElem(E,[X|T],[E,X|T]) :- E @< X, !.
+%insertElem(E,[E|T],[E|T]) :- !.
+insertElem(E,[X|T],[X|NT]) :- insertElem(E,T,NT).

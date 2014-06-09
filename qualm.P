@@ -1,0 +1,518 @@
+:- consult(preprocess).
+
+:- import member/2 from basics.
+:- import trie_create/2, trie_drop/1, trie_intern/2, trie_property/2, trie_interned/2 from intern.
+:- import incr_assert/1, incr_retractall/1, incr_assert_inval/1 from increval.
+
+:- dynamic abds/1, intv/1.
+:- dynamic pending/2.
+
+:- dynamic '#(r)'/5, 'not_#(r)'/5 as incremental.
+:- dynamic expect/4, not_expect/4 as incremental.
+:- dynamic expect_not/4, not_expect_not/4 as incremental.
+%:- dynamic false/3, not_false/3 as incremental.
+:- dynamic make/4, not_make/4 as incremental.
+:- dynamic make_not/4, not_make_not/4 as incremental.
+
+:- dynamic qt/1 as incremental.
+:- dynamic upper/1 as incremental.
+
+:- dynamic upd_abd/4, not_upd_abd/4 as incremental.
+
+:- table fluent/5 as incremental.
+
+
+/*
+being_true(G) :- call_tv(G,true).
+
+qualmProspection(Lits,Options) :-
+	findall(on_observe(O),being_true(holds on_observe(O)),Observables),
+	qualmSelectObservables(Options,Observables,SelectedObservables),
+	qualmProspection(SelectedObservables,Lits,Options),
+	(member(self_update,Options),Lits\=[] -> assert_abds(Lits) ; true).
+*/
+
+clean :-
+	abolish_all_tables,
+	%(retract(abds(A)) -> retractall_rules(A,2); true),
+	%(retract(lits(L)) -> retractall_rules(L,3); true),
+	retractall(qt(_)),
+	%retract_intv,
+	retractall(intv(_)),
+	retract_abds,
+	retract_lits,
+	retract_ICs,
+	retractall(has_facts(_,_)),
+	retractall(hasFacts(_,_)),
+	retractall(hasRules(_,_)),
+	retractall(hasAssertRules(_,_)),
+	retractall(ruleNames(_,_,_,_)),
+	retractall(ruleId(_,_,_)),
+	retractall(rule(_,_)),
+	retractall(rule(_,_,_)),
+	retractall(ruleAs(_,_)),
+	retractall(inBody(_)),
+	retractall(pending(_,_)),
+	incr_retractall(upper(_)),
+	incr_assert(upper(0)),
+	%assert(lits([false/0, '#(r)'/2, expect/1, expect_not/1])),
+	assert(lits(['#(r)'/2, expect/1, expect_not/1, make/1, make_not/1, upd_abd/1])),
+	%assert(inBody(false)),
+	clean_trie,
+	trie_create(_,[type(prge),alias(dual)]).
+
+retract_abds :-
+	retract(abds(A)), !,
+	retractall_rules(A,3).
+retract_abds.
+
+retract_intv :-
+	retract(intv(I)), !,
+	incr_retractall_rules(I,3).
+retract_intv.
+
+retract_lits :-
+	retract(lits(A)), !,
+	incr_retractall_rules(A,3).
+retract_lits.
+
+retract_ICs :-
+	retractall(false(_,_,_)),
+	retractall(not_false(_,_,_)),
+	retractall(false_st(_,_,_,_)),	
+	retractall(ruleNames(false,_,_,_)).
+
+
+retractall_rules([],_).
+retractall_rules([P/A|Ps],XtrArg) :-
+	(retract(ruleNames(P,_,NotP,P_st)) ->
+	 (NewA_st is A + XtrArg + 1, functor(Pred_st,P_st,NewA_st), retractall(Pred_st));
+	 atom_concat('not_',P,NotP)
+	),
+	NewA is A + XtrArg,
+	functor(Pred,P,NewA),
+	functor(NotPred,NotP,NewA),
+	retractall(Pred), 
+	retractall(NotPred), 
+	retractall_rules(Ps,XtrArg).
+
+
+incr_retractall_rules([],_).
+incr_retractall_rules([P/A|Ps],XtrArg) :-
+	(retract(ruleNames(P,_,NotP,P_st)) ->
+	 (NewA_st is A + XtrArg + 1, functor(Pred_st,P_st,NewA_st), retractall(Pred_st));
+	 atom_concat('not_',P,NotP)
+	),
+	NewA is A + XtrArg,
+	functor(Pred,P,NewA),
+	functor(NotPred,NotP,NewA),
+	incr_retractall(Pred), 
+	incr_retractall(NotPred), 
+	incr_retractall_rules(Ps,XtrArg).
+
+clean_trie :-
+	trie_drop(dual), !; true.
+
+consultQ(File) :-
+	consultQualm(File),
+	upper_time(20).
+
+consultQualm(File) :-
+	clean,
+	%[consider],
+	preprocessClauses(File,ProFile),
+	loadPro(ProFile).
+	%tell('prologAuxCode.P'),
+	%loadClauses,
+	%processClauses,
+	%processQualmClauses,
+	%prepareDualTrie,
+	%assert(current(2)),
+	%told,
+	%ensure_loaded('prologAuxCode.P').
+
+%%%%
+
+:- table consider_ab/3 as incremental.
+
+
+consider(In,Out,T,Abd) :-
+	ensure_ground(Abd),
+	consider_ab(E,T,Abd),
+	produce(Out, In, E).
+
+
+%consider_ab(E,T,Abd) :-
+%	fluent(make,[Abd],[]*[],E,T), !.
+
+consider_ab(E,T,Abd) :-
+	fluent(make,[Abd],[]*[],E,T).
+
+consider_ab(E,T,Abd) :-
+	fluent(upd_abd,[Abd],[]*[],O1,G), !,
+	fluent(not_make_not,[Abd],O1,E,H),
+	latest([(not_make_not,[Abd],O1,E,H),(upd_abd,[Abd],[]*[],O1,G)],T).
+
+consider_ab(E,T,Abd) :-
+	Abd =.. [AbdL|AbdArg],
+	TimedAbd =.. [AbdL,T|AbdArg],	
+	fluent(expect,[Abd],[TimedAbd] * [],Acc,F),
+	fluent(not_expect_not,[Abd],Acc,E,G),
+	latest([(not_expect_not,[Abd],Acc,E,G),(expect,[Abd],[TimedAbd] * [],Acc,F)],T).
+
+
+
+
+%%%%%
+
+  
+not_consider(I,O,T,A) :-
+	consider_st0(Lit0,I,J,A),
+	consider_st1(Lit1,J,K,A),
+	consider_st2(Lit2,K,O,A),
+	latest([Lit0,Lit1,Lit2],T).
+
+consider_st0((not_make,[A],I,O,T),I,O,A) :-
+	fluent(not_make,[A],I,O,T).
+
+consider_st1((not_upd_abd,[A],I,O,T),I,O,A) :-
+	fluent(not_upd_abd,[A],I,O,T).
+
+consider_st1((make_not,[A],O1,O,T),I,O,A) :-
+	fluent(upd_abd,[A],I,O1,T1),
+	fluent(make_not,[A],O1,O,T),
+	verify_lits([(upd_abd,[A],I,O1,T1)],T).
+	   
+
+consider_st2(T,I,O,A) :-
+	(fluent(upd_abd,[A],_,_,_) ->
+	 fluent(not_upd_abd,[A],I,O,T);
+	 consider_st2_aux(T,I,O,A)
+	).
+
+
+abduce_not(T,I,O,A) :-
+	A =.. [Pred|Args],
+	atom_concat('not_',Pred,NegA),
+	NotA =.. [NegA,I,O,T|Args],
+	call(NotA).
+
+
+
+consider_st2_aux((not_expect,[A],I,O,T),I,O,A) :-
+	fluent(not_expect,[A],I,O1,T),
+	abduce_not(T,O1,O,A).
+
+consider_st2_aux((expect_not,[A],O1,O,T),I,O,A) :-
+	fluent(expect,[A],I,O1,T1),
+	fluent(expect_not,[A],O1,O2,T),
+	abduce_not(T,O2,O,A),
+	verify_lits([(expect,[A],I,O1,T1)],T).
+
+
+%%%%
+
+produce(PT*NT,PI*NI,PE*NE) :-
+	cm_pos(PE,PI,NI,PT),
+	cm_neg(NE,PI,NI,NT).
+
+cm_pos([],PI,_,PI).
+cm_pos([E|_],_,NI,_) :-
+	memberO(not(E),NI), !, fail.
+cm_pos([E|Es],PI,NI,NewPI) :-
+	insertElem(E,PI,AccPI), cm_pos(Es,AccPI,NI,NewPI).
+
+cm_neg([],_,NI,NI).
+cm_neg([not(A)|_],PI,_,_) :-
+	memberO(A,PI), !, fail.
+cm_neg([not(A)|Es],PI,NI,NewNI) :-
+	insertElem(not(A),NI,AccNI), cm_neg(Es,PI,AccNI,NewNI).
+
+%%%%  
+
+insert(not(A),P*_,_) :-
+	memberO(A,P), !, fail.
+insert(not(A),P*N,P*NewN) :- !, insertElem(not(A),N,NewN).
+insert(A,_*N,_) :- memberO(not(A),N), !, fail.
+insert(A,P*N,NewP*N) :- insertElem(A,P,NewP).
+
+
+%%%%
+
+dual(RNum,RTempl,Head,LitDual,I,O) :-
+	trie_property(Trie,alias(dual)),
+	dual(Trie,RNum,RTempl,Head,LitDual,I,O).
+
+dual(Trie,RNum,RTempl,Head,LitDual,I,O) :-
+	trie_interned(d(RNum,RTempl,IT,OT,DualBody,LitDual,_),Trie),
+	copy_term(Head,Head1),
+	call_dual(Head1,I,O,RTempl,IT,OT,DualBody).
+
+dual(Trie,RNum,RTempl,Head,LitDual,I,O) :-
+	next_dualize(Trie,RNum,RTempl,Lits),
+	dualize(Lits,Dual,ResLits),
+	processDual(Dual,LitDual,DualBody,IT,OT,[]),
+	new_store_dual(Trie,RNum,RTempl,IT,OT,DualBody,LitDual,ResLits),
+	copy_term(Head,Head1),
+	call_dual(Head1,I,O,RTempl,IT,OT,DualBody).
+
+next_dualize(Trie,RNum,RTempl,Track) :-
+	trie_interned(d(RNum,RTempl,_,_,_,_,Track),Trie), !.
+next_dualize(_,RNum,RTempl,Track) :-
+	rule(RNum,RTempl,Track).
+
+dualize([(A,Args,TS)],[(NA,Args,TS)],[]) :- !,
+	negLit(A,NA).
+dualize([(A,Args,TS)|As],[(NA,Args,TS)],As) :-
+	negLit(A,NA).
+dualize([(not(_),_,_)|B],NB,Rest) :-
+	!, dualize(B,NB,Rest).
+dualize([A|B],[A|NB],Rest) :-
+	dualize(B,NB,Rest).
+
+
+processDual([A],LitDual,(ProA,Latest),I,O,Ls) :- !,
+	processBodyLatest(A,LitDual,ProA,I,O),
+	LitDual = (_,_,_,_,T),
+	Latest =.. [verify_lits,Ls,T].
+processDual([A|B],LitDual,(ProA,ProB),I,O,Ls) :-
+	processBodyLatest(A,L,ProA,I,OA),
+	processDual(B,LitDual,ProB,OA,O,[L|Ls]).
+
+
+new_store_dual(Trie,RNum,RTempl,I,O,Dual,LitDual,ResNon) :- 
+	next_dualize(Trie,RNum,RTempl,_),
+	trie_intern(d(RNum,RTempl,I,O,Dual,LitDual,ResNon),Trie).
+	%incr_trie_intern(Trie,d(RNum,RTempl,I,O,Dual,LitDual,ResNon)).
+
+call_dual(H,I,O,H,I,O,DualBody) :-
+	call(DualBody).
+
+
+
+%%%%
+
+upper_time(Lim) :-
+	incr_retractall(upper(_)),
+	incr_assert(upper(Lim)).	
+/*
+update_abd(A,H) :-
+	assert(pending(consider(A),H)).
+*/
+
+update_abd(not A,H) :- !,
+	assertIfNot(pending(upd_abd(A),0)),
+	assert(pending(not upd_abd(A),H)).
+update_abd(A,H) :-
+	assert(pending(upd_abd(A),H)).
+
+update(F,H) :-
+	assert(pending(F,H)).
+
+
+
+act_assert(Qt) :-
+	pending(F_,Ht), Ht =< Qt,
+	collectPrefsArt(F_,_,F,Arg),
+	Fluent =.. [F,I,I,Ht|Arg],
+	%incr_assert_inval(Fluent),
+	incr_assert_inval_IfNot(Fluent),
+	retract(pending(F_,Ht)),
+	fail.
+act_assert(_).
+	
+
+holds(Lit,I,O,Qt) :-
+	holds_h(Lit,I,O,_,Qt).
+
+holds_h(Lit,I,O,H,Qt) :-
+	incr_retractall(qt(_)),
+	incr_assert(qt(Qt)),
+	holds(Lit,I,O,H,Qt).
+	
+
+holds(_,_,_,_,Qt) :-
+	upper(Lim),
+	(Qt > Lim ; Qt =< 0), !,
+	write('Error: query time is beyond upper time limit ('),
+	write(Lim), writeln(')'),
+	fail.
+
+holds(Lit,I,O,H,Qt) :-
+	act_assert(Qt),
+	collectPrefsArt(Lit,_,P,Arg),
+	compute(P,Arg,I,O,H,Qt,TV),
+	atom_compl(P,P_),	
+	compute(P_,Arg,I,O,H_,Qt,TV_),
+	verify(H,TV,H_,TV_).
+
+compute(P,Arg,I,O,H,Qt,TV) :-
+	(bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), T=<Qt),Ls) ->
+	 most_recent(Ls,H,O,TV);
+	 (H=0, TV=false)
+	).
+
+/*
+most_recent(Ls,H,O,TV) :-
+	unique(Ls,Ms),
+	minimal(Ms,Ns),
+	member((H,O,TV),Ns).
+*/
+
+most_recent(Ls,H,O,TV) :-
+	unique(Ls,Ms),
+	member((H,O,TV),Ms).
+
+
+minimal([X|Xs],Ys) :-
+	minimal(Xs,[X],Ys).
+
+minimal([],Xs,Xs).
+minimal([X|Xs],Vs,Ys) :-
+	super(X,Vs,Ws),
+	minimal(Xs,Ws,Ys).
+
+:- import subseq/3 from basics.
+
+super(X,[],[X]).
+super((T,O1,V),[(_,O2,V)|Ys],Zs) :-
+	subset(O2,O1), !,
+	super((T,O1,V),Ys,Zs).
+super((_,O1,V),[(T,O2,V)|Ys],[(T,O2,V)|Ys]) :-
+	subset(O1,O2), !.
+super(X,[Y|Ys],[Y|Zs]) :-
+	super(X,Ys,Zs).
+
+
+subset(P1*N1,P2*N2) :-
+	subseq(P1,P2,_), subseq(N1,N2,_).
+
+%%%%
+
+unique([X|Xs],Ys) :-
+	unique(Xs,[X],Ys).
+
+unique([],Ys,Ys).
+unique([Z|Zs],Vs,Ys) :-
+	member_max(Z,Vs,Ws), !,
+	unique(Zs,Ws,Ys).
+unique([Z|Zs],Vs,Ys) :-
+	unique(Zs,[Z|Vs],Ys).
+
+member_max((T1,O1,TV1),[(T2,O2,TV2)|Vs],[(T3,O3,TV3)|Vs]) :-
+	same_str(O1,O2), !,
+	maxi_true((T1,O1,TV1),(T2,O2,TV2),(T3,O3,TV3)).
+member_max(Z,[V|Vs],[V|Ws]) :-
+	member_max(Z,Vs,Ws).
+
+same_str([]*[],[]*[]).
+same_str([]*[X|Xs],[]*[Y|Ys]) :-
+	X @= Y,
+	same_str([]*Xs,[]*Ys).
+same_str([X|Xs]*[],[Y|Ys]*[]) :-
+	X @= Y,
+	same_str(Xs*[],Ys*[]).
+same_str([X1|Xs1]*[X2|Xs2],[Y1|Ys1]*[Y2|Ys2]) :-
+	X1 @= Y1, X2 @= Y2,
+	same_str(Xs1*Xs2,Ys1*Ys2).
+
+maxi_true((T1,O1,true),(_,_,undefined),(T1,O1,true)) :- !.
+maxi_true((_,_,undefined),(T2,O2,true),(T2,O2,true)) :- !.
+maxi_true((T1,O1,TV),(T2,_,TV),(T1,O1,TV)) :-
+	T1 > T2, !.
+maxi_true((_,_,_),(T2,O2,TV),(T2,O2,TV)).
+
+
+verify(_,undefined,_,true) :- !, fail.
+verify(H,TV,H_,_) :- H >= H_, TV.
+
+%%%
+
+fluent(FlName,Arg,I,O,Ht) :-
+	upper(Lim),
+	Fluent =.. [FlName,I,O,Ht|Arg],
+	Fluent,
+	(var(Ht) -> true; Ht =< Lim).
+
+
+%%%%
+
+latest_time(Hs,Max) :-
+  latest_time(Hs,0,Max).
+
+latest_time([],Tmp,Max) :-
+	(Tmp = 0 -> qt(Max);
+	 Max=Tmp).
+latest_time([H|Hs],Tmp,Max) :-
+	var(H), !,
+	H = Max,
+	latest_time(Hs,Tmp,Max).  
+latest_time([(_,_,_,_,H)|Hs],Tmp,Max) :-
+	var(H), !,
+	H = Max,
+	latest_time(Hs,Tmp,Max).
+latest_time([(_,_,_,_,H)|Hs],Tmp,Max) :-
+	H > Tmp, !,
+	latest_time(Hs,H,Max).
+latest_time([_|Hs],Tmp,Max) :-
+	latest_time(Hs,Tmp,Max).
+
+
+%%%%%
+
+  
+latest(Ls,T) :-
+	latest_time(Ls,T),
+	not_overridden(Ls,T).
+
+
+verify_lits(Ls,T) :-
+	(var(T) -> qt(T); true),
+	test_lits(Ls,T).
+
+test_lits([],_).
+test_lits([L|Ls],T) :-
+	var(L), !,
+	L = T,
+	test_lits(Ls,T).
+test_lits([(_,_,_,_,H)|Ls],T) :-
+	var(H), !,
+	H = T,
+	test_lits(Ls,T).
+test_lits([(P,Arg,I,O,H)|Ls],T) :-
+	qt(Qt),
+	H =< Qt,
+	not_overridden(P,Arg,I,O,H,T),
+	test_lits(Ls,T).
+
+not_overridden([],_).
+not_overridden([(P,Arg,I,O,H)|Ls],T) :- !,
+	not_overridden(P,Arg,I,O,H,T),
+	not_overridden(Ls,T).
+not_overridden([_|Ls],T) :-
+	not_overridden(Ls,T).
+
+not_overridden(Pred,Arg,In,Out,T,MaxT) :-
+	atom_compl(Pred,Pred_),
+	\+ overridden(Pred_,Arg,In,Out,T,MaxT).
+
+/*
+overridden(F,A,I,O,T,Up) :-
+	Pred =.. [F,I,O,H|A],
+	call(Pred),
+	H =< Up, H > T.
+*/
+
+overridden(F,A,I,O,T,Up) :-
+	(is_lits(F,A) ->
+	 fluent(F,A,I,O,H);
+	 (Pred =.. [F,I,O,H|A], call(Pred))
+	),
+	H =< Up, H > T.
+
+
+
+
+
+
+	

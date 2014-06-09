@@ -1,0 +1,6 @@
+abds([a/0,b/0,c/0,d/0]).
+
+x <- a, inspect(y), b, c, not d.
+y <- inspect(not a).
+z <- d.
+y <- b,inspect(not z),c.

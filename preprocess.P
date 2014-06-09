@@ -1,0 +1,479 @@
+:- consult(list_utils).
+:- consult(app_utils).
+
+:- op(1110,xfy, '<-' ).         % Rule symbol
+:- op(1110,fy, '<-' ).         % Rule symbol
+:- op(600,fx,#).
+
+
+:- import comma_to_list/2, memberchk/2, append/3, member/2 from basics.
+:- import term_to_atom/2 from string.
+
+:- dynamic rule/2, rule/3, ruleAs/2, lits/1, ruleNames/4, ruleId/3, hasRules/2, hasAssertRules/2, has_facts/2, hasFacts/2, inBody/1.
+
+preprocessClauses(File,ProFile) :-
+	seeAbFile(File),
+	tellProFile(File,ProFile),
+	processC,
+	(intv(L) -> processI(L); true),
+	seen,
+	told.
+
+seeAbFile(FileName) :-
+	append(FileName,".ab",FExt),
+	name(F,FExt),
+	see(F).
+
+tellProFile(FileName,ProF) :-
+	append(FileName,"_p.ab",FExt),
+	name(ProF,FExt),
+	tell(ProF).
+
+processC :-
+	read(C), 
+	( C = end_of_file -> true; 
+	processPred(C), processC
+	). 
+
+processI(L) :-
+	member(N/A,L),
+	functor(I,N,A),
+	write(I), write(' <- '), write_list([make(I)]).
+	
+
+%abducibles
+processPred(abds(L)) :- write(abds(L)), write('.'), nl, my_assert(abds(L)).
+processPred(intv(L)) :- write(intv(L)), write('.'), nl, my_assert(intv(L)).
+
+%change abducibles to consider form
+processPred((H <- B)) :- processRuleAbdsIntv(H,B). 
+processPred(( <- B)) :- processICAbds(B). 
+
+%others
+processPred(C) :-
+	write(C),
+	intv_to_make(C,C1),
+	(C1 = [] -> true;
+	 (write(' <- '), write_list(C1))
+	),
+	write('.'), nl.
+
+processRuleAbdsIntv(H,B) :- 
+	comma_to_list(B,L),
+	abd_to_consider(L,L1),
+	intv_to_make(H,H1),
+	append(H1,L1,B1),
+	write(H), write(' <- '), write_list(B1), nl. 
+
+processICAbds(B) :- 
+	comma_to_list(B, L), 
+	abd_to_consider(L, L1),
+	write('<- '), write_list(L1), nl. 
+
+
+%This predicate is to change the abducible predicates, e.g. A, in the body of any rule
+%to consider(A).
+
+
+abd_to_consider([], []). 
+abd_to_consider([not X|Xs], [not CX|L]) :- 
+	is_abducible(X), !, 
+	CX =.. [consider|[X]], 
+	abd_to_consider(Xs, L). 
+abd_to_consider([X|Xs], [CX|L]) :-
+	is_abducible(X), !, 
+	CX =.. [consider|[X]], 
+	abd_to_consider(Xs, L). 
+abd_to_consider([X|Xs], [X|L]) :- 
+	abd_to_consider(Xs, L). 
+
+%%%%
+
+intv_to_make(X,[not make_not(X)]) :- 
+	is_interventable(X), !.
+intv_to_make(_,[]).
+
+%%%%
+
+loadPro(ProFile) :-
+	see(ProFile),
+	loadClauses,
+	processClauses,
+	seen.
+
+loadClauses :-
+    read(C),
+    ( C = end_of_file -> verifyLoadedClauses;
+      ( loadClause(C), addRuleId(C), loadClauses ) ).
+
+verifyLoadedClauses :-
+	retract(has_facts(F,A)),
+	(hasRules(F,A) -> true; assert(hasFacts(F,A))),
+	fail.
+verifyLoadedClauses :- nl.
+
+addRuleId((H <- B)) :- !,
+	retract(ruleId(H,B,[ProH,ProB])),
+	RuleId =.. ['#(r)',ProH,ProB],
+	makeFact(RuleId).
+addRuleId(_).
+
+
+loadClause(abds(_)) :- !.
+loadClause(intv(_)) :- !.
+loadClause(beginProlog) :- !,
+	tell('prologAuxCode.P'),
+	processProlog.
+
+% ICs
+loadClause(( <- B)) :- !,
+	loadClause((false <- B)).
+
+% Rules with 'assert/1' in the head
+loadClause((assert(F) <- B)) :- !,
+	loadInClause(F,ProF),
+	makeRule(assert(ProF),B,RuleName),       
+	makeRuleAs(ProF),
+	assertIfNot(ruleId(assert(F),B,RuleName)).
+
+% Rules
+loadClause((H <- B)) :- !,
+	makeRule(H,B,RuleName),
+	assertIfNot(ruleId(H,B,RuleName)).
+
+% Facts
+loadClause(H) :- !,
+	makeFact(H).
+
+loadInClause(assert(In),assert(Out)) :- !,
+	loadInClause(In,Out).
+loadInClause((H <- B),'#(r)'(ProH,ProB)) :- !,
+	comma_to_list(B,ListB),
+	term_to_atom(H,ProH),
+	term_to_atom(ListB,ProB),
+	loadClause((H <- B)).
+loadInClause(F,F).
+
+
+processProlog :-
+	read(C),
+	( C = end_of_file ->
+		(seen, told, write('ERROR: missing endProlog'), nl, abort);
+	  C = endProlog -> (told, ensure_loaded(prologAuxCode));
+	  	(writeProlog(C), processProlog) ).
+
+writeProlog(C) :- write(C), write('.'), nl.
+
+
+makeFact(Head) :-
+	addToFluents(Head,G,Art,Args),
+	assertHasFacts(G,Art),
+	Gluent =.. [G|Args],
+	my_assert(rule(Gluent,[])).	
+
+makeRule(Head,B,[ProHead,ProB]) :-
+	addToFluents(Head,G,Art,Args),
+	assertHasRules(G,Art),	
+	Gluent =.. [G|Args],
+	comma_to_list(B,ListB),
+	term_to_atom(Head,ProHead),
+	term_to_atom(ListB,ProB),
+	loadBody(B,LoadedB),
+	assertRuleNames(G),
+	(rule(Gluent,[('#(r)',[ProHead,ProB],Hr)|LoadedB]) -> true;
+	my_assert(rule(Gluent,[('#(r)',[ProHead,ProB],Hr)|LoadedB]))).
+
+makeRuleAs(assert(F)) :- !,
+	addToFluents(assert(F),G,Art,Args),
+	assertHasAssertRules(G,Art),		
+	Gluent =.. [G,H|Args],
+	(ruleAs(Gluent,[(assert(G),Args,Ha), H is Ha+1]) -> true;
+	my_assert(ruleAs(Gluent,[(assert(G),Args,Ha), H is Ha+1]))),
+	makeRuleAs(F).
+
+makeRuleAs(F) :-
+	addToFluents(F,G,Art,Args),
+	assertHasAssertRules(G,Art),	
+	Gluent =.. [G,H|Args],
+	(ruleAs(Gluent,[(assert(G),Args,Ha), H is Ha+1]) -> true;
+	my_assert(ruleAs(Gluent,[(assert(G),Args,Ha), H is Ha+1]))).
+
+addToFluents(consider(A),consider,1,[A]) :- !.
+addToFluents(H,G,Art,Args) :-
+	collectPrefsArt(H,Art,G,Args),
+	lits(Fs),
+	(atom_concat('not_',Pref,G) -> true; Pref=G),
+	addToFluents(Pref,Art,Fs).
+
+
+addToFluents(Pref,Art,Fs) :-
+	memberchk(Pref/Art,Fs), !.
+addToFluents(Pref,Art,Fs) :-
+	retract(lits(Fs)),
+	atom_compl(Pref,Pref_),
+	my_incr_dyn(Pref,Art),
+	my_incr_dyn(Pref_,Art),
+	my_assert(lits([Pref/Art|Fs])).
+
+
+loadBody((true,B),NA) :- !,
+	loadBody(B,NA).
+loadBody((prolog(P),B),[prolog(P)|NA]) :- !,
+	loadBody(B,NA).
+loadBody(((not A),B),[(not PrefA,Args,_)|Rs]) :- !,
+	assertInBody(A),
+	addToFluents(A,PrefA,_,Args), 
+	loadBody(B,Rs).
+loadBody((A,B),[(PrefA,Args,_)|Rs]) :- !,
+	assertInBody(A),
+	addToFluents(A,PrefA,_,Args), 
+	loadBody(B,Rs).
+loadBody(true,[]) :- !.
+loadBody(prolog(P),[prolog(P)]) :- !.
+loadBody((not A),[(not PrefA,Args,_)]) :- !,
+	assertInBody(A),
+	addToFluents(A,PrefA,_,Args).
+loadBody(A,[(PrefA,Args,_)]) :-
+	assertInBody(A),
+	addToFluents(A,PrefA,_,Args).
+
+assertHasRules(H,A) :-
+	assertIfNot(hasRules(H,A)).
+
+assertHasAssertRules(H,A) :-
+	assertIfNot(hasAssertRules(H,A)).
+
+
+assertInBody(consider(_)) :- !.
+assertInBody(make(_)) :- !.
+assertInBody(make_not(_)) :- !.
+assertInBody(H) :-
+	assertIfNot(inBody(H)).
+
+assertHasFacts(H,A) :-
+	assertIfNot(has_facts(H,A)).
+
+assertRuleNames(N) :-
+	(atom_concat('not_',Pos,N) -> NegN = Pos; renamePred("not_",N,[],NegN)),
+	renamePred([],N,"_ab",N_ab),
+	renamePred([],N,"_st",N_st),
+	assertIfNot(ruleNames(N,N_ab,NegN,N_st)).
+
+%%%%
+
+processClauses :-
+	process_init,
+	process_FailRules,
+	process_UndefRules,
+	process_Abds,
+	process_Facts,
+	process_Rules,
+	process_AssertedRules.
+
+process_init :-
+	process_init(make(_),0),
+	process_init(make_not(_),0),
+	process_init(upd_abd(_),0).
+
+process_init(C,Start) :-
+	collectPrefsArt(C,Art,PredName,_),
+	makeList(Art,Args),
+	processLit(not(PredName),Args,I,I,Start,PL),
+	my_incr_assert(PL).	
+
+process_FailRules :-
+	process_FailRules(false),
+	process_FailRules(expect(_)),
+	process_FailRules(expect_not(_)).
+
+process_FailRules(L) :-
+	%retract(inBody(false)),
+	hasNoRules(L,Art,PredName), !,
+	makeList(Art,Args),
+	processLit(not(PredName),Args,I,I,1,PL),
+	%my_incr_assert(PL).
+	assert_FailRules(L,PL).
+process_FailRules(_).
+
+assert_FailRules(false,PL) :- !,
+	my_assert(PL).
+assert_FailRules(_,PL) :-
+	my_incr_assert(PL).
+
+process_UndefRules :-
+	retract(inBody(H)), 
+	hasNoRules(H,A,L),
+	makeList(A,Args),
+	processLit(L,Args,I,I,1,PL),
+	my_incr_assert((PL :- undef)),
+	processLit(not(L),Args,I,I,1,NPL),
+	my_incr_assert((NPL :- undef)),
+	fail.
+process_UndefRules.
+
+
+hasNoRules(H,A,L) :-
+	collectPrefsArt(H,A,L,_),
+	\+ hasDefRules(L,A),
+	%\+ hasDefAsRules(L,A),
+	\+ hasDefFacts(L,A),
+	\+ is_abducible(H).
+
+hasDefRules(L,A) :-
+	atom_compl(L,L_),
+	(hasRules(L,A);hasRules(L_,A)).
+
+hasDefAsRules(L,A) :-
+	atom_compl(L,L_),
+	(hasAssertRules(L,A);hasAssertRules(L_,A)).
+
+hasDefFacts(L,A) :-
+	atom_compl(L,L_),
+	(hasFacts(L,A);hasFacts(L_,A)).
+
+process_Abds :-
+	get_sol(abds(LAb),LAb),
+	process_AbdRules(LAb).
+
+process_AbdRules([]).
+process_AbdRules([N/A|L]) :-
+	functor(Ab,N,A),
+	Ab =.. [AbAtom|AbArgs],
+	renamePred("not_",AbAtom,[],Not_AbAtom),
+	AbH =.. [AbAtom,I,O,H|AbArgs],
+	AbHNeg =.. [Not_AbAtom,I,O,H|AbArgs],
+	TimedAb =.. [AbAtom,H|AbArgs],
+	my_assert((AbH :- ensure_ground(Ab), insert(TimedAb,I,O))),
+	my_assert((AbHNeg :- ensure_ground(Ab), insert(not(TimedAb),I,O))),
+	process_AbdRules(L).
+
+/*
+processAbd(not(H),I,O,ProNotH) :- !,
+	H =.. [NameH|ArgsH],
+	renamePred("not_",NameH,[],Not_H),
+	ProNotH =.. [Not_H,I,O|ArgsH].
+processAbd(H,I,O,ProH) :-
+	H =.. [NameH|ArgsH],
+	ProH =.. [NameH,I,O|ArgsH].
+*/
+
+process_Facts :-
+	retract(hasFacts(H,A)),
+	find_facts(H,A,R),
+	processFacts(R),
+	%processNegFact(H,A),
+	fail.
+process_Facts.
+
+find_facts(H,A,R) :-
+	functor(Head,H,A),
+	findall(fact(Head,1),clause(rule(Head,[]),true),R).
+
+processFacts([]).
+processFacts([fact(H,TS)|Fs]) :-
+	H =.. [Head|Args],
+	processAtom(Head,Args,I,I,TS,ProH),
+	my_incr_assert(ProH),
+	processFacts(Fs).
+/*
+processNegFact(H,A) :-
+	makeList(A,Args),
+	processLit(not(H),Args,I,I,1,ProH),
+	processAtom(H,Args,_,_,_,ProB),
+	my_assert((ProH :- \+ ProB)).
+*/
+process_Rules :-
+	retract(hasRules(H,A)),
+	find_rules(H,A,R),
+	process_pos_rules(R),
+	process_neg_rule(H,A,R),
+	process_star_rules(H,A,R),
+	process_Rules.
+process_Rules.
+
+/*
+find_rules(H,A,R) :-
+	functor(Head,H,A),
+	findall(rule(Head,Body),clause(rule(Head,Body),true),R).
+*/
+
+find_rules(H,A,R) :-
+	functor(Head,H,A),
+	index_rules(Head,1,R).
+
+index_rules(Head,N,[rule(N,Head,Body)|Rs]) :-
+	retract(rule(Head,Body)), !,
+	my_assert(rule(N,Head,Body)),
+	NewN is N+1,
+	index_rules(Head,NewN,Rs).
+index_rules(_,_,[]).
+
+
+process_pos_rules([]).
+process_pos_rules([rule(_,H,B)|Rs]) :-
+	process_pos_rule(H,B), 
+	process_pos_rules(Rs).
+
+process_pos_rule(H,[(#r,RuleName,TS)]) :- !, 
+	H =.. [Name|Args],
+	ProH =.. [Name,I,O,TS|Args],
+	ProB =.. ['#r',I,O,TS|RuleName],
+	my_incr_assert((ProH :- ProB)).
+
+process_pos_rule(H,B) :-
+	H =.. [Name|Args],
+	ProH =.. [Name,I,O,TS|Args],
+	processBodyPos(B,[],Latest,ProB,I,O,TS),
+	my_incr_assert((ProH :- ProB,Latest)).
+
+
+processBodyPos([A],Ls,Latest,ProA,I,O,TS) :- !,
+	processBodyLatest(A,L,ProA,I,O),
+	Latest =.. [latest,[L|Ls],TS].
+
+processBodyPos([A|B],Ls,Latest,(ProA,ProB),I,O,TS) :-
+	processBodyLatest(A,L,ProA,I,OA),
+	processBodyPos(B,[L|Ls],Latest,ProB,OA,O,TS).
+
+process_neg_rule(Name,A,R) :-
+	ruleNames(Name,_,NegN,N_st),
+	makeList(A,Args),
+	processLit(NegN,Args,I,O,TS,ProH2),
+	process_neg_body(N_st,Args,R,[I,O,TS],[],ProB2),
+	my_incr_assert((ProH2 :- ProB2)).
+
+process_neg_body(N_st,Args,[rule(N,_,_)],[I,O,TS],Ls,(B,Latest)) :- !,
+	B =.. [N_st,N,LitDual,I,O|Args],
+	 Latest =.. [latest,[LitDual|Ls],TS].
+process_neg_body(N_st,Args,[rule(N,_,_)|Rs],[I,O,TS],Ls,(B,Bs)) :-
+	B =.. [N_st,N,LitDual,I,OA|Args],
+	process_neg_body(N_st,Args,Rs,[OA,O,TS],[LitDual|Ls],Bs).
+
+process_star_rules(Name,A,R) :-
+	ruleNames(Name,_,_,Name_st),
+	makeList(A,Args),
+	H =.. [Name|Args],
+	process_diff_rules(Name_st,Args,H,R),
+	process_dual_template(Name_st,Args,H).
+
+process_diff_rules(_,_,_,[]).
+process_diff_rules(Name_st,Args,Head,[rule(N,H,_)|Rs]) :-
+	Head_st =.. [Name_st,N,_,I,I|Args],
+	my_assert((Head_st :- Head \= H, !)),
+	process_diff_rules(Name_st,Args,Head,Rs).
+
+process_dual_template(Name_st,Args,Head) :-
+	copy_term(Head,Head1),
+	Head_st =.. [Name_st,N,LitDual,I,O|Args],
+	my_assert((Head_st :- dual(N,Head1,Head,LitDual,I,O))).
+
+process_AssertedRules :-
+	ruleAs(Head,[(H,Arg,TS),Incr]),
+	Head =.. [Name|ArgsHead],
+	ProHead =.. [Name,I,O|ArgsHead],
+	term_to_atom(H,HA),
+	%ProH =.. [HA,I,O,TS|Arg],
+	%my_incr_assert((ProHead :- ProH, Incr)),
+	my_incr_assert((ProHead :- fluent(HA,Arg,I,O,TS), Incr)),
+	fail.
+process_AssertedRules.	

@@ -1,0 +1,7 @@
+abds([earlier_than_6am/0]).
+
+traffic_jam <- cause, enabler.
+enabler <- not earlier_than_6am.
+
+cause.
+expect_not(earlier_than_6am).

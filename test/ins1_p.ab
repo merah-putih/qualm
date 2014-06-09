@@ -1,0 +1,9 @@
+abds([a / 0,b / 0,c / 0,d / 0]).
+x <- consider(a),inspect(y),consider(b),consider(c),not consider(d).
+inspect(x) <- abduced(a),inspect(y),abduced(b),abduced(c),not abduced(d).
+y <- not abduced(a).
+inspect(y) <- not abduced(a).
+z <- consider(d).
+inspect(z) <- abduced(d).
+y <- consider(b),not inspect(z),consider(c).
+inspect(y) <- abduced(b),not inspect(z),abduced(c).

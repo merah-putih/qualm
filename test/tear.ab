@@ -1,0 +1,6 @@
+abds([tear_gas/0,water_cannon/0,fire/0]).
+
+contain <- tear_gas.
+contain <- water_cannon.
+smoke <- fire.
+smoke <- inspect(tear_gas).
