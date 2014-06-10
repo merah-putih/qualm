@@ -142,9 +142,6 @@ consider(In,Out,T,Abd) :-
 	produce(Out, In, E).
 
 
-%consider_ab(E,T,Abd) :-
-%	fluent(make,[Abd],[]*[],E,T), !.
-
 consider_ab(E,T,Abd) :-
 	fluent(make,[Abd],[]*[],E,T).
 
@@ -173,10 +170,14 @@ not_consider(I,O,T,A) :-
 	latest([Lit0,Lit1,Lit2],T).
 
 consider_st0((not_make,[A],I,O,T),I,O,A) :-
-	fluent(not_make,[A],I,O,T).
+	(fluent(not_make,[A],I,O,T) -> true;
+	 (O=I, T=0)
+	).
 
 consider_st1((not_upd_abd,[A],I,O,T),I,O,A) :-
-	fluent(not_upd_abd,[A],I,O,T).
+	(fluent(not_upd_abd,[A],I,O,T) -> true;
+	 (O=I, T=0)
+	).
 
 consider_st1((make_not,[A],O1,O,T),I,O,A) :-
 	fluent(upd_abd,[A],I,O1,T1),
@@ -454,7 +455,12 @@ latest_time([(_,_,_,_,H)|Hs],Tmp,Max) :-
 latest_time([(_,_,_,_,H)|Hs],Tmp,Max) :-
 	H > Tmp, !,
 	latest_time(Hs,H,Max).
-latest_time([_|Hs],Tmp,Max) :-
+latest_time([(_,_,_,_,_)|Hs],Tmp,Max) :- !,
+	latest_time(Hs,Tmp,Max).
+latest_time([H|Hs],Tmp,Max) :-
+	H > Tmp, !,
+	latest_time(Hs,H,Max).
+latest_time([_|Hs],Tmp,Max) :- 
 	latest_time(Hs,Tmp,Max).
 
 
