@@ -1,0 +1,9 @@
+abds([like_math/0,please_parent/0]).
+
+scientist <- not like_math, reason.
+scientist <- like_math, reason.
+
+reason <- please_parent.
+
+expect(please_parent).
+

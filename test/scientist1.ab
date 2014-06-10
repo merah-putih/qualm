@@ -1,0 +1,4 @@
+abds([like_math/0]).
+
+scientist <- not like_math.
+scientist <- like_math.
