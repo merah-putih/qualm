@@ -266,6 +266,7 @@ processClauses :-
 	process_FailRules,
 	process_UndefRules,
 	process_Abds,
+	%process_FailRules,
 	process_Facts,
 	process_Rules,
 	process_AssertedRules.
@@ -282,6 +283,36 @@ process_init(C,Start) :-
 	my_incr_assert(PL).	
 
 process_FailRules :-
+	process_expectation,
+	process_false.
+
+process_expectation :-
+	get_sol(abds(As),As),
+	process_expectation(As).
+
+process_expectation([]).
+process_expectation([A/N|As]) :-
+	%member(A/N,As),
+	functor(Abd,A,N),
+	(rule(expect(Abd),[]) -> true;
+	 (processAtom(not_expect,[Abd],I,I,1,N_EA),
+	  assert_FailRules(expect,N_EA))
+	),
+	(rule(expect_not(Abd),[]) -> true;
+	 (processAtom(not_expect_not,[Abd],I,I,1,EA),
+	  assert_FailRules(expect_not,EA))
+	),
+	process_expectation(As).
+
+
+process_false :-
+	(hasDefRules(false,0) -> true;
+	 processLit(not(false),[],I,I,1,PL),
+	 assert_FailRules(false,PL)
+	).
+	
+/*
+process_FailRules :-
 	process_FailRules(false),
 	process_FailRules(expect(_)),
 	process_FailRules(expect_not(_)).
@@ -294,6 +325,7 @@ process_FailRules(L) :-
 	%my_incr_assert(PL).
 	assert_FailRules(L,PL).
 process_FailRules(_).
+*/
 
 assert_FailRules(false,PL) :- !,
 	my_assert(PL).
