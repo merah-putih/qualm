@@ -321,7 +321,13 @@ act_assert(Qt) :-
 	retract(pending(F_,Ht)),
 	fail.
 act_assert(_).
-	
+
+test_abducible(not G,H) :- !,
+	(is_abducible(G) -> H = not(consider(G));
+	 H = not(G)).
+test_abducible(G,H) :-
+	(is_abducible(G) -> H = consider(G);
+	 H = G).
 
 holds(Lit,I,O,Qt) :-
 	holds_h(Lit,I,O,_,Qt).
@@ -329,9 +335,9 @@ holds(Lit,I,O,Qt) :-
 holds_h(Lit,I,O,H,Qt) :-
 	incr_retractall(qt(_)),
 	incr_assert(qt(Qt)),
-	holds(Lit,I,O,H,Qt).
+	test_abducible(Lit,ProLit),
+	holds(ProLit,I,O,H,Qt).
 	
-
 holds(_,_,_,_,Qt) :-
 	upper(Lim),
 	(Qt > Lim ; Qt =< 0), !,
@@ -347,6 +353,13 @@ holds(Lit,I,O,H,Qt) :-
 	compute(P_,Arg,I,O,H_,Qt,TV_),
 	verify(H,TV,H_,TV_).
 
+
+compute(P,Arg,I,O,H,Qt,TV) :-
+	(P=consider;P=not_consider), !,
+	(bagof((T,O,true),(G =.. [P,I,O,T|Arg], call(G), T=<Qt),Ls) ->
+	 most_recent(Ls,H,O,TV);
+	 (H=0, TV=false)
+	).
 compute(P,Arg,I,O,H,Qt,TV) :-
 	(bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), T=<Qt),Ls) ->
 	 most_recent(Ls,H,O,TV);
