@@ -6,6 +6,7 @@
 
 :- dynamic abds/1, intv/1.
 :- dynamic pending/2.
+:- dynamic act_pending/0. %flag that a pending is activated
 
 :- dynamic '#(r)'/5, 'not_#(r)'/5 as incremental.
 :- dynamic expect/4, not_expect/4 as incremental.
@@ -13,6 +14,8 @@
 :- dynamic false/3, not_false/3 as incremental.
 :- dynamic make/4, not_make/4 as incremental.
 :- dynamic make_not/4, not_make_not/4 as incremental.
+
+:- dynamic current/1.
 
 :- dynamic qt/1 as incremental.
 :- dynamic upper/1 as incremental.
@@ -36,6 +39,8 @@ clean :-
 	abolish_all_tables,
 	%(retract(abds(A)) -> retractall_rules(A,2); true),
 	%(retract(lits(L)) -> retractall_rules(L,3); true),
+	retractall(act_pending),
+	retractall(current(_)),
 	retractall(qt(_)),
 	%retract_intv,
 	retractall(intv(_)),
@@ -112,8 +117,26 @@ incr_retractall_rules([P/A|Ps],XtrArg) :-
 clean_trie :-
 	trie_drop(dual), !; true.
 
+%%%%
+
+newNumberOfUpdate(1) :-
+        \+ current(_), assert(current(2)).
+newNumberOfUpdate(C) :-
+        retract(current(C)), C1 is C+1, assert(current(C1)).
+
+uptime :-
+	newNumberOfUpdate(_).
+
+uptime(Qt) :-
+	retract(current(_)),
+	assert(current(Qt)).
+
+
+%%%%
+
 consultQ(File) :-
 	consultQualm(File),
+	newNumberOfUpdate(_),
 	upper_time(20).
 
 consultQualm(File) :-
@@ -295,10 +318,9 @@ call_dual(H,I,O,H,I,O,DualBody) :-
 upper_time(Lim) :-
 	incr_retractall(upper(_)),
 	incr_assert(upper(Lim)).	
-/*
-update_abd(A,H) :-
-	assert(pending(consider(A),H)).
-*/
+
+%%%%
+% single update at specific time
 
 update_abd(not A,H) :- !,
 	assertIfNot(pending(upd_abd(A),0)),
@@ -306,32 +328,71 @@ update_abd(not A,H) :- !,
 update_abd(A,H) :-
 	assert(pending(upd_abd(A),H)).
 
-       
 update(F,H) :-
 	assert(pending(F,H)).
 
-updates([]).
-updates([(not U,T)|Us]) :- !,
+% sequence of updates
+p_update(not U,T) :- !,
 	(is_abducible(U) -> update_abd(not U,T);
 	 update(not U,T)
-	),
-	updates(Us).
-updates([(U,T)|Us]) :-
+	).
+p_update(U,T) :-
 	(is_abducible(U) -> update_abd(U,T);
 	 update(U,T)
-	),
+	).
+
+%%%%
+% sequence of updates
+
+updates([]).
+updates([make_not(M)|Us]) :- !,
+	current(Qt),
+	holds_h(M,[]*[],_,H,Qt),
+	Tmake is H + 0.01,
+	update(make_not(M),Tmake),
+	updates(Us).
+updates([make(M)|Us]) :- !,
+	current(Qt),
+	holds_h(not(M),[]*[],_,H,Qt),
+	Tmake is H + 0.01,
+	update(make(M),Tmake),
+	updates(Us).
+updates([not make_not(M)|Us]) :- !,
+	current(Qt),
+	holds_h(make_not(M),_,_,H,Qt),
+	Tmake is H + 0.01,
+	update(not make_not(M),Tmake),
+	updates(Us).	
+updates([not make(M)|Us]) :- !,
+	current(Qt),
+	holds_h(make(M),_,_,H,Qt),
+	Tmake is H + 0.01,
+	update(not make(M),Tmake),
+	updates(Us).
+updates([(U,T)|Us]) :- !,
+	p_update(U,T),
+	updates(Us).
+updates([U|Us]) :-
+	current(T),
+	p_update(U,T),
 	updates(Us).
 
+%%%%
 
 act_assert(Qt) :-
 	pending(F_,Ht), Ht =< Qt,
-	collectPrefsArt(F_,_,F,Arg),
-	Fluent =.. [F,I,I,Ht|Arg],
-	%incr_assert_inval(Fluent),
-	incr_assert_inval_IfNot(Fluent),
+	act_update(F_,Ht),
+	(Ht = Qt -> assertIfNot(act_pending); true),
 	retract(pending(F_,Ht)),
 	fail.
 act_assert(_).
+
+act_update(F_,Ht) :-
+	collectPrefsArt(F_,_,F,Arg),
+	Fluent =.. [F,I,I,Ht|Arg],
+	incr_assert_inval_IfNot(Fluent).
+
+	
 
 test_abducible(not G,H) :- !,
 	(is_abducible(G) -> H = not(consider(G));
@@ -340,8 +401,15 @@ test_abducible(G,H) :-
 	(is_abducible(G) -> H = consider(G);
 	 H = G).
 
+query(G,O) :-
+	current(Qt),
+	query(G,O,Qt).
+
 query(G,O,Qt) :-
-	query(G,[]*[],O,Qt).
+	act_assert(Qt),
+	query(G,[]*[],O,Qt),
+	(retract(act_pending) -> newNumberOfUpdate(_);
+	 true).
 
 query((G1,G2),I,O,Qt) :- !,
 	holds(G1,I,O1,Qt),
@@ -369,7 +437,7 @@ holds(_,_,_,_,Qt) :-
 	fail.
 
 holds(Lit,I,O,H,Qt) :-
-	act_assert(Qt),
+	%act_assert(Qt),
 	collectPrefsArt(Lit,_,P,Arg),
 	compute(P,Arg,I,O,H,Qt,TV),
 	atom_compl(P,P_),	
