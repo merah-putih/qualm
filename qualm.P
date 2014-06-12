@@ -10,7 +10,7 @@
 :- dynamic '#(r)'/5, 'not_#(r)'/5 as incremental.
 :- dynamic expect/4, not_expect/4 as incremental.
 :- dynamic expect_not/4, not_expect_not/4 as incremental.
-%:- dynamic false/3, not_false/3 as incremental.
+:- dynamic false/3, not_false/3 as incremental.
 :- dynamic make/4, not_make/4 as incremental.
 :- dynamic make_not/4, not_make_not/4 as incremental.
 
@@ -41,7 +41,7 @@ clean :-
 	retractall(intv(_)),
 	retract_abds,
 	retract_lits,
-	retract_ICs,
+	%retract_ICs,
 	retractall(has_facts(_,_)),
 	retractall(hasFacts(_,_)),
 	retractall(hasRules(_,_)),
@@ -55,8 +55,7 @@ clean :-
 	retractall(pending(_,_)),
 	incr_retractall(upper(_)),
 	incr_assert(upper(0)),
-	%assert(lits([false/0, '#(r)'/2, expect/1, expect_not/1])),
-	assert(lits(['#(r)'/2, expect/1, expect_not/1, make/1, make_not/1, upd_abd/1])),
+	assert(lits([false/0,'#(r)'/2, expect/1, expect_not/1, make/1, make_not/1, upd_abd/1])),
 	%assert(inBody(false)),
 	clean_trie,
 	trie_create(_,[type(prge),alias(dual)]).
@@ -307,9 +306,21 @@ update_abd(not A,H) :- !,
 update_abd(A,H) :-
 	assert(pending(upd_abd(A),H)).
 
+       
 update(F,H) :-
 	assert(pending(F,H)).
 
+updates([]).
+updates([(not U,T)|Us]) :- !,
+	(is_abducible(U) -> update_abd(not U,T);
+	 update(not U,T)
+	),
+	updates(Us).
+updates([(U,T)|Us]) :-
+	(is_abducible(U) -> update_abd(U,T);
+	 update(U,T)
+	),
+	updates(Us).
 
 
 act_assert(Qt) :-
@@ -328,6 +339,18 @@ test_abducible(not G,H) :- !,
 test_abducible(G,H) :-
 	(is_abducible(G) -> H = consider(G);
 	 H = G).
+
+query(G,O,Qt) :-
+	query(G,[]*[],O,Qt).
+
+query((G1,G2),I,O,Qt) :- !,
+	holds(G1,I,O1,Qt),
+	holds(G2,O1,O,Qt).
+query(not false,I,O,Qt) :- !,
+	holds(not false,I,O,Qt).
+query(G,I,O,Qt) :-
+	holds(G,I,O1,Qt),
+	holds(not false,O1,O,Qt).
 
 holds(Lit,I,O,Qt) :-
 	holds_h(Lit,I,O,_,Qt).
