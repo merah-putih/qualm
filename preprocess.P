@@ -56,26 +56,63 @@ processPred(C) :-
 	(C1 = [] -> true;
 	 (write(' <- '), write_list(C1))
 	),
-	write('.'), nl.
+	write('.'), nl,
+	write(inspect(C)), write('.'), nl.
 
 processRuleAbdsIntv(H,B) :- 
 	comma_to_list(B,L),
 	abd_to_consider(L,L1),
 	intv_to_make(H,H1),
 	append(H1,L1,B1),
-	write(H), write(' <- '), write_list(B1), nl. 
+	inspect_body(L1,L2),	
+	write(H), write(' <- '), write_list(B1), nl,
+	write(inspect(H)), write(' <- '), write_list(L2), nl.
 
 processICAbds(B) :- 
 	comma_to_list(B, L), 
 	abd_to_consider(L, L1),
-	write('<- '), write_list(L1), nl. 
+	inspect_body(L1,L2),
+	write('<- '), write_list(L1), nl,
+	write('<- '), write_list(L2), nl.
+
+%%%%
+inspect_body([], []).
+inspect_body([inspect(X)|Xs],[inspect(X)|Ys]) :- !,
+	inspect_body(Xs,Ys).
+inspect_body([abduced(X)|Xs],[abduced(X)|Ys]) :- !,
+	inspect_body(Xs,Ys).
+inspect_body([consider(X)|Xs],[abduced(X)|Ys]) :- !,
+	inspect_body(Xs,Ys).
+inspect_body([not consider(X)|Xs],[not abduced(X)|Ys]) :- !,
+	inspect_body(Xs,Ys).
+inspect_body([not X|Xs], [not X|L]) :-
+	(X=inspect(_); X=abduced(_)), !,
+	inspect_body(Xs,L).
+inspect_body([not X|Xs], [not CX|L]) :- !,
+	CX =.. [inspect,X],
+	inspect_body(Xs, L). 
+inspect_body([X|Xs], [CX|L]) :-
+	CX =.. [inspect,X],
+	inspect_body(Xs, L). 
+
+%%%%
 
 
 %This predicate is to change the abducible predicates, e.g. A, in the body of any rule
 %to consider(A).
 
 
-abd_to_consider([], []). 
+abd_to_consider([], []).
+abd_to_consider([inspect(not X)|Xs],[not PX|L]) :- !,
+	(is_abducible(X) -> PX =.. [abduced,X];
+	 PX =.. [inspect,X]
+	),
+	abd_to_consider(Xs,L).
+abd_to_consider([inspect(X)|Xs],[PX|L]) :- !,
+	(is_abducible(X) -> PX =.. [abduced,X];
+	 PX =.. [inspect,X]
+	),
+	abd_to_consider(Xs,L).	
 abd_to_consider([not X|Xs], [not CX|L]) :- 
 	is_abducible(X), !, 
 	CX =.. [consider|[X]], 
@@ -112,6 +149,10 @@ verifyLoadedClauses :-
 	fail.
 verifyLoadedClauses :- nl.
 
+addRuleId((<- B)) :- !,
+	retract(ruleId(false,B,[false,ProB])),
+	RuleId =.. ['#(r)',false,ProB],
+	makeFact(RuleId).
 addRuleId((H <- B)) :- !,
 	retract(ruleId(H,B,[ProH,ProB])),
 	RuleId =.. ['#(r)',ProH,ProB],
@@ -199,6 +240,7 @@ makeRuleAs(F) :-
 	my_assert(ruleAs(Gluent,[(assert(G),Args,Ha), H is Ha+1]))).
 
 addToFluents(consider(A),consider,1,[A]) :- !.
+addToFluents(abduced(A),abduced,1,[A]) :- !.
 addToFluents(H,G,Art,Args) :-
 	collectPrefsArt(H,Art,G,Args),
 	lits(Fs),
@@ -247,6 +289,7 @@ assertHasAssertRules(H,A) :-
 assertInBody(consider(_)) :- !.
 assertInBody(make(_)) :- !.
 assertInBody(make_not(_)) :- !.
+assertInBody(abduced(_)) :- !.
 assertInBody(H) :-
 	assertIfNot(inBody(H)).
 

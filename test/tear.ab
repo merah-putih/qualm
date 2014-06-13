@@ -4,3 +4,7 @@ contain <- tear_gas.
 contain <- water_cannon.
 smoke <- fire.
 smoke <- inspect(tear_gas).
+
+expect(fire).
+expect(tear_gas).
+expect(water_cannon).

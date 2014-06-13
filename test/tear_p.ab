@@ -7,3 +7,9 @@ smoke <- consider(fire).
 inspect(smoke) <- abduced(fire).
 smoke <- abduced(tear_gas).
 inspect(smoke) <- abduced(tear_gas).
+expect(fire).
+inspect(expect(fire)).
+expect(tear_gas).
+inspect(expect(tear_gas)).
+expect(water_cannon).
+inspect(expect(water_cannon)).

@@ -61,6 +61,7 @@ clean :-
 	incr_retractall(upper(_)),
 	incr_assert(upper(0)),
 	assert(lits([false/0,'#(r)'/2, expect/1, expect_not/1, make/1, make_not/1, upd_abd/1])),
+	%assert(abds([abduced/1])),
 	%assert(inBody(false)),
 	clean_trie,
 	trie_create(_,[type(prge),alias(dual)]).
@@ -259,6 +260,18 @@ insert(not(A),P*N,P*NewN) :- !, insertElem(not(A),N,NewN).
 insert(A,_*N,_) :- memberO(not(A),N), !, fail.
 insert(A,P*N,NewP*N) :- insertElem(A,P,NewP).
 
+%%%%
+
+abduced(I,O,_,A) :-
+	A =.. [Atm|Args],
+	TimedA =.. [Atm,_|Args],
+	insert(abduced(TimedA),I,O).
+
+not_abduced(I,O,_,A) :-
+	A =.. [Atm|Args],
+	TimedA =.. [Atm,_|Args],
+	insert(not abduced(TimedA),I,O).
+	
 
 %%%%
 
@@ -296,7 +309,7 @@ dualize([A|B],[A|NB],Rest) :-
 
 processDual([A],LitDual,(ProA,Latest),I,O,Ls) :- !,
 	processBodyLatest(A,LitDual,ProA,I,O),
-	LitDual = (_,_,_,_,T),
+	(var(LitDual) -> T=_; LitDual=(_,_,_,_,T)),
 	Latest =.. [verify_lits,Ls,T].
 processDual([A|B],LitDual,(ProA,ProB),I,O,Ls) :-
 	processBodyLatest(A,L,ProA,I,OA),
@@ -413,12 +426,15 @@ query(G,O,Qt) :-
 
 query((G1,G2),I,O,Qt) :- !,
 	holds(G1,I,O1,Qt),
-	holds(G2,O1,O,Qt).
+	holds(G2,O1,O,Qt),
+	paired_abduced(O).
 query(not false,I,O,Qt) :- !,
-	holds(not false,I,O,Qt).
+	holds(not false,I,O,Qt),
+	paired_abduced(O).
 query(G,I,O,Qt) :-
 	holds(G,I,O1,Qt),
-	holds(not false,O1,O,Qt).
+	holds(not false,O1,O,Qt),
+	paired_abduced(O).
 
 holds(Lit,I,O,Qt) :-
 	holds_h(Lit,I,O,_,Qt).
@@ -447,22 +463,34 @@ holds(Lit,I,O,H,Qt) :-
 
 compute(P,Arg,I,O,H,Qt,TV) :-
 	(P=consider;P=not_consider), !,
-	(bagof((T,O,true),(G =.. [P,I,O,T|Arg], call(G), T=<Qt),Ls) ->
+	(bagof((T,O,true),(G =.. [P,I,O,T|Arg], call(G), within(T,Qt)),Ls) ->
 	 most_recent(Ls,H,O,TV);
 	 (H=0, TV=false)
 	).
 compute(P,Arg,I,O,H,Qt,TV) :-
-	(bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), T=<Qt),Ls) ->
+	(bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), within(T,Qt)),Ls) ->
 	 most_recent(Ls,H,O,TV);
 	 (H=0, TV=false)
 	).
 
-/*
-most_recent(Ls,H,O,TV) :-
-	unique(Ls,Ms),
-	minimal(Ms,Ns),
-	member((H,O,TV),Ns).
-*/
+%%%%
+%%%%
+filter_out(O,T,Qt) :-
+	within(T,Qt),
+	paired_abduced(O).
+
+within(T,Qt) :- T=<Qt.
+
+paired_abduced(P*_) :-
+	member(abduced(A),P), !,
+	member(A,P).
+paired_abduced(_*N) :-
+	member(not abduced(A),N), !,
+	member(not(A),N).
+paired_abduced(_*_).
+	
+
+%%%%
 
 most_recent(Ls,H,O,TV) :-
 	unique(Ls,Ms),
