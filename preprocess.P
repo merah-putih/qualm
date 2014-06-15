@@ -72,8 +72,8 @@ processICAbds(B) :-
 	comma_to_list(B, L), 
 	abd_to_consider(L, L1),
 	inspect_body(L1,L2),
-	write('<- '), write_list(L1), nl,
-	write('<- '), write_list(L2), nl.
+	write('false <- '), write_list(L1), nl,
+	write('inspect(false) <- '), write_list(L2), nl.
 
 %%%%
 inspect_body([], []).
@@ -167,8 +167,8 @@ loadClause(beginProlog) :- !,
 	processProlog.
 
 % ICs
-loadClause(( <- B)) :- !,
-	loadClause((false <- B)).
+%loadClause(( <- B)) :- !,
+%	loadClause((false <- B)).
 
 % Rules with 'assert/1' in the head
 loadClause((assert(F) <- B)) :- !,

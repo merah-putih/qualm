@@ -8,3 +8,5 @@ smoke <- inspect(tear_gas).
 expect(fire).
 expect(tear_gas).
 expect(water_cannon).
+
+<- tear_gas,fire.

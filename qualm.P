@@ -1,6 +1,6 @@
 :- consult(preprocess).
 
-:- import member/2 from basics.
+:- import member/2, memberchk/2 from basics.
 :- import trie_create/2, trie_drop/1, trie_intern/2, trie_property/2, trie_interned/2 from intern.
 :- import incr_assert/1, incr_retractall/1, incr_assert_inval/1 from increval.
 
@@ -420,21 +420,22 @@ query(G,O) :-
 
 query(G,O,Qt) :-
 	act_assert(Qt),
-	query(G,[]*[],O,Qt),
+	query_ins(G,[]*[],O,Qt),
 	(retract(act_pending) -> newNumberOfUpdate(_);
 	 true).
 
+query_ins(G,I,O,Qt) :-
+	query(G,I,O,Qt),
+	paired_abduced(O).
+
+query(not false,I,O,Qt) :- !,
+	holds(not false,I,O,Qt).
 query((G1,G2),I,O,Qt) :- !,
 	holds(G1,I,O1,Qt),
-	holds(G2,O1,O,Qt),
-	paired_abduced(O).
-query(not false,I,O,Qt) :- !,
-	holds(not false,I,O,Qt),
-	paired_abduced(O).
+	query(G2,O1,O,Qt).
 query(G,I,O,Qt) :-
 	holds(G,I,O1,Qt),
-	holds(not false,O1,O,Qt),
-	paired_abduced(O).
+	holds(not false,O1,O,Qt).
 
 holds(Lit,I,O,Qt) :-
 	holds_h(Lit,I,O,_,Qt).
@@ -482,12 +483,14 @@ filter_out(O,T,Qt) :-
 within(T,Qt) :- T=<Qt.
 
 paired_abduced(P*_) :-
-	member(abduced(A),P), !,
-	member(A,P).
+	member(abduced(A),P),
+	memberchk(A,P).
 paired_abduced(_*N) :-
-	member(not abduced(A),N), !,
-	member(not(A),N).
-paired_abduced(_*_).
+	member(not abduced(A),N),
+	memberchk(not(A),N).
+paired_abduced(P*N) :-
+	\+ (memberchk(abduced(_),P);memberchk(not abduced(_),N)).
+	
 	
 
 %%%%

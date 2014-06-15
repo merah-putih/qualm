@@ -13,3 +13,5 @@ expect(tear_gas).
 inspect(expect(tear_gas)).
 expect(water_cannon).
 inspect(expect(water_cannon)).
+false <- consider(tear_gas),consider(fire).
+inspect(false) <- abduced(tear_gas),abduced(fire).
