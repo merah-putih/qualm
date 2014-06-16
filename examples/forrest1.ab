@@ -4,7 +4,7 @@ forrest_fire <- lightning, enabler.
 enabler <- dry_leaves, leaves_on_ground.
 
 lightning <- storm.
-leaves_on_ground <- storm.
+leaves_on_ground <- inspect(storm).
 
 expect(dry_leaves).
 expect(storm).
