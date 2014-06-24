@@ -411,11 +411,11 @@ query(G,O,Qt) :-
 	(retract(act_pending) -> newNumberOfUpdate(_);
 	 true).
 
-query((G1,G2),I,O,Qt) :- !,
-	holds(G1,I,O1,Qt),
-	holds(G2,O1,O,Qt).
 query(not false,I,O,Qt) :- !,
 	holds(not false,I,O,Qt).
+query((G1,G2),I,O,Qt) :- !,
+	holds(G1,I,O1,Qt),
+	query(G2,O1,O,Qt).
 query(G,I,O,Qt) :-
 	holds(G,I,O1,Qt),
 	holds(not false,O1,O,Qt).

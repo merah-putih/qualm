@@ -112,6 +112,10 @@ verifyLoadedClauses :-
 	fail.
 verifyLoadedClauses :- nl.
 
+addRuleId((<- B)) :- !,
+	retract(ruleId(false,B,[false,ProB])),
+	RuleId =.. ['#(r)',false,ProB],
+	makeFact(RuleId).
 addRuleId((H <- B)) :- !,
 	retract(ruleId(H,B,[ProH,ProB])),
 	RuleId =.. ['#(r)',ProH,ProB],
