@@ -1,0 +1,11 @@
+abds([terror_bombing/0]).
+
+end_war <- lower_moral_enemy.
+
+kill_civilian <- terror_bombing.
+
+lower_moral_enemy <- kill_civilian.
+
+expect(terror_bombing).
+
+
