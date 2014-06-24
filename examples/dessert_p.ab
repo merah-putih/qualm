@@ -1,7 +1,0 @@
-abds([hole / 0]).
-died <- died_thirsty.
-died <- died_poison.
-died_thirsty <- consider(hole).
-died_poison <- water_poison,not consider(hole).
-water_poison.
-expect(hole).

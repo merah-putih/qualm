@@ -1,0 +1,11 @@
+abds([tactical_bombing/0]).
+
+intv([kill_civilian/0]).
+
+end_war <- military_target.
+
+military_target <- tactical_bombing.
+
+kill_civilian <- tactical_bombing.
+
+expect(tactical_bombing).

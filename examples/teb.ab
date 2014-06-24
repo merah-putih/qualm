@@ -1,5 +1,7 @@
 abds([terror_bombing/0]).
 
+intv([kill_civilian/0]).
+
 end_war <- lower_moral_enemy.
 
 kill_civilian <- terror_bombing.
