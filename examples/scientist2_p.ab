@@ -1,5 +1,0 @@
-abds([like_math / 0,please_parent / 0]).
-scientist <- not consider(like_math),reason.
-scientist <- consider(like_math),reason.
-reason <- consider(please_parent).
-expect(please_parent).

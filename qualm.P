@@ -223,8 +223,7 @@ abduce_not(T,I,O,A) :-
 
 
 consider_st2_aux((not_expect,[A],I,O,T),I,O,A) :-
-	fluent(not_expect,[A],I,O1,T),
-	abduce_not(T,O1,O,A).
+	fluent(not_expect,[A],I,O,T).
 
 consider_st2_aux((expect_not,[A],O1,O,T),I,O,A) :-
 	fluent(expect,[A],I,O1,T1),
@@ -331,7 +330,8 @@ update_abd(A,H) :-
 update(F,H) :-
 	assert(pending(F,H)).
 
-% sequence of updates
+
+%%%%
 p_update(not U,T) :- !,
 	(is_abducible(U) -> update_abd(not U,T);
 	 update(not U,T)
@@ -350,31 +350,49 @@ updates([make_not(M)|Us]) :- !,
 	holds_h(M,[]*[],_,H,Qt),
 	Tmake is H + 0.01,
 	update(make_not(M),Tmake),
+	write('Pending counterfactual update: not '),
+	write(M),
+	write(', at time '), writeln(Tmake),
 	updates(Us).
 updates([make(M)|Us]) :- !,
 	current(Qt),
 	holds_h(not(M),[]*[],_,H,Qt),
 	Tmake is H + 0.01,
 	update(make(M),Tmake),
+	write('Pending counterfactual update: '),
+	write(M),
+	write(', at time '), writeln(Tmake),
 	updates(Us).
 updates([not make_not(M)|Us]) :- !,
 	current(Qt),
 	holds_h(make_not(M),_,_,H,Qt),
 	Tmake is H + 0.01,
 	update(not make_not(M),Tmake),
+	write('Pending cancel counterfactual update: not '),
+	write(M),
+	write(', at time '), writeln(Tmake),
 	updates(Us).	
 updates([not make(M)|Us]) :- !,
 	current(Qt),
 	holds_h(make(M),_,_,H,Qt),
 	Tmake is H + 0.01,
 	update(not make(M),Tmake),
+	write('Pending cancel counterfactual update: '),
+	write(M),
+	write(', at time '), writeln(Tmake),
 	updates(Us).
 updates([(U,T)|Us]) :- !,
 	p_update(U,T),
+	write('Pending update: '),
+	write(U),
+	write(', at time '), writeln(T),
 	updates(Us).
 updates([U|Us]) :-
 	current(T),
 	p_update(U,T),
+	write('Pending update: '),
+	write(U),
+	write(', at current time '), writeln(T),
 	updates(Us).
 
 %%%%

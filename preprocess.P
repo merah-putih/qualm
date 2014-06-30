@@ -25,7 +25,7 @@ seeAbFile(FileName) :-
 	see(F).
 
 tellProFile(FileName,ProF) :-
-	append(FileName,"_p.ab",FExt),
+	append(FileName,".pab",FExt),
 	name(ProF,FExt),
 	tell(ProF).
 

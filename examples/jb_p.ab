@@ -1,5 +1,0 @@
-abds([born_rus / 1]).
-communist(jb) <- consider(born_rus(jb)).
-traitor(jb) <- communist(jb),born_uk(jb).
-born_uk(jb) <- not dif_born_uk(jb).
-dif_born_uk(jb) <- consider(born_rus(jb)).
