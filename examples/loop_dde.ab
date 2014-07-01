@@ -1,0 +1,12 @@
+
+intv([kill_man/0,man_on_side_track/0,man_pushed/0]).
+
+kill_man <- man_on_side_track, sidetrack_trolley.
+
+% loop track
+save_scouts <- kill_man.  
+
+sidetrack_trolley.
+
+man_on_side_track.
+

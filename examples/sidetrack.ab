@@ -1,0 +1,11 @@
+abds([sidetrack_trolley/0]).
+
+intv([kill_man/0]).
+
+kill_man <- man_on_side_track, sidetrack_trolley.
+
+save_scouts <- sidetrack_trolley.
+
+expect(sidetrack_trolley).
+
+man_on_side_track.
