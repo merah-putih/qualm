@@ -11,11 +11,14 @@
 
 :- dynamic rule/2, rule/3, ruleAs/2, lits/1, ruleNames/4, ruleId/3, hasRules/2, hasAssertRules/2, has_facts/2, hasFacts/2, inBody/1.
 
+:- dynamic hasClauses/2.
+
 preprocessClauses(File,ProFile) :-
 	seeAbFile(File),
 	tellProFile(File,ProFile),
 	processC,
 	(intv(L) -> processI(L); true),
+	%(intv(L),processI(L,I),writeI(I); true),
 	seen,
 	told.
 
@@ -38,25 +41,35 @@ processC :-
 processI(L) :-
 	member(N/A,L),
 	functor(I,N,A),
-	write(I), write(' <- '), write_list([make(I)]).
-	
+	(retract(hasClauses(N,A)) -> true;
+	 write(I), write(' <- '), write_list([not make_not(I)]), nl
+	),
+	write(I), write(' <- '), write_list([make(I)]), nl,
+	fail.
+processI(_).
+
 
 %abducibles
 processPred(abds(L)) :- write(abds(L)), write('.'), nl, my_assert(abds(L)).
 processPred(intv(L)) :- write(intv(L)), write('.'), nl, my_assert(intv(L)).
 
 %change abducibles to consider form
-processPred((H <- B)) :- processRuleAbdsIntv(H,B). 
+processPred((H <- B)) :-
+	collectPrefsArt(H,Art,ProH,_),
+	assertIfNot(hasClauses(ProH,Art)),
+	processRuleAbdsIntv(H,B). 
 processPred(( <- B)) :- processICAbds(B). 
 
 %others
 processPred(C) :-
+	collectPrefsArt(C,Art,ProC,_),
+	assertIfNot(hasClauses(ProC,Art)),
 	write(C),
 	intv_to_make(C,C1),
-	(C1 = [] -> true;
+	(C1 = [] -> write('.');
 	 (write(' <- '), write_list(C1))
 	),
-	write('.'), nl.
+	nl.
 
 processRuleAbdsIntv(H,B) :- 
 	comma_to_list(B,L),

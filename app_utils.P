@@ -1,4 +1,4 @@
-:- import memberchk/2, length/2, append/3 from basics.
+:- import memberchk/2, length/2, append/3, comma_to_list/2 from basics.
 :- import incr_assert/1, incr_assert_inval/1 from increval.
 :- import term_to_atom/2 from string.
 

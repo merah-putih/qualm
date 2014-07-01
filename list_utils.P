@@ -1,7 +1,7 @@
 :- import variant/2 from subsumes.
 
-write_list([X]) :- !, write(X), write('.').
-write_list([X|L]) :- write(X), write(','), write_list(L). 
+write_list([X]) :- write(X), write('.').
+write_list([X|L]) :- L \=[], write(X), write(','), write_list(L). 
 
 makeList(N,L) :-
 	makeList(N,N,L).

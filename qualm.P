@@ -50,6 +50,7 @@ clean :-
 	retractall(has_facts(_,_)),
 	retractall(hasFacts(_,_)),
 	retractall(hasRules(_,_)),
+	retractall(hasClauses(_,_)),
 	retractall(hasAssertRules(_,_)),
 	retractall(ruleNames(_,_,_,_)),
 	retractall(ruleId(_,_,_)),
