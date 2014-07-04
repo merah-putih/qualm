@@ -1,7 +1,7 @@
 :- import memberchk/2, length/2, append/3, comma_to_list/2 from basics.
 :- import incr_assert/1, incr_assert_inval/1 from increval.
 :- import term_to_atom/2 from string.
-
+:- import gensym/2 from gensym.
 
 :- op(1110,xfy, '<-' ).         % Rule symbol
 :- op(1110,fy, '<-' ).         % Rule symbol
@@ -120,11 +120,21 @@ undef :- tnot undef.
 
 ensure_ground(Abd) :-
 	(ground(Abd) -> true;
-	 make_ground(Abd) % need to be defined.
+	 Abd =.. [_|Args],
+	 make_ground(Args) % need to be defined.
 	).
 
 %dummy definition of make_ground/1
-make_ground(_).
+%make_ground(_).
+
+make_ground([]).
+make_ground([A|As]) :-
+	(ground(A) -> true;
+	 gensym(sk,A)
+	),
+	make_ground(As).
+
+
 
 
 

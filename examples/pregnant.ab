@@ -1,0 +1,6 @@
+
+intv([take_pill/0]).
+
+fail_pregnant <- take_pill.
+fail_pregnant.
+

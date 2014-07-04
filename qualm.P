@@ -3,6 +3,7 @@
 :- import member/2 from basics.
 :- import trie_create/2, trie_drop/1, trie_intern/2, trie_property/2, trie_interned/2 from intern.
 :- import incr_assert/1, incr_retractall/1, incr_assert_inval/1 from increval.
+:- import prepare/1 from gensym.
 
 :- dynamic abds/1, intv/1.
 :- dynamic pending/2.
@@ -63,6 +64,7 @@ clean :-
 	incr_assert(upper(0)),
 	assert(lits([false/0,'#(r)'/2, expect/1, expect_not/1, make/1, make_not/1, upd_abd/1])),
 	%assert(inBody(false)),
+	prepare(0),
 	clean_trie,
 	trie_create(_,[type(prge),alias(dual)]).
 
@@ -159,8 +161,7 @@ consultQualm(File) :-
 :- table consider_ab/3 as incremental.
 
 
-consider(In,Out,T,Abd) :-
-	ensure_ground(Abd),
+consider(In,Out,T,Abd) :-	
 	consider_ab(E,T,Abd),
 	produce(Out, In, E).
 
@@ -174,6 +175,7 @@ consider_ab(E,T,Abd) :-
 	latest([(not_make_not,[Abd],O1,E,H),(upd_abd,[Abd],[]*[],O1,G)],T).
 
 consider_ab(E,T,Abd) :-
+	ensure_ground(Abd),
 	Abd =.. [AbdL|AbdArg],
 	TimedAbd =.. [AbdL,T|AbdArg],	
 	fluent(expect,[Abd],[TimedAbd] * [],Acc,F),
@@ -466,15 +468,18 @@ holds(Lit,I,O,H,Qt) :-
 
 compute(P,Arg,I,O,H,Qt,TV) :-
 	(P=consider;P=not_consider), !,
-	(bagof((T,O,true),(G =.. [P,I,O,T|Arg], call(G), T=<Qt),Ls) ->
-	 most_recent(Ls,H,O,TV);
+	copy_term([Arg,I],[CopyArg,CopyI]),
+	((G =.. [P,CopyI,_,_|CopyArg], call(G)) ->
+	 (bagof((T,O,true),(G =.. [P,I,O,T|Arg], call(G), T=<Qt),Ls), most_recent(Ls,H,O,TV));
 	 (H=0, TV=false)
 	).
 compute(P,Arg,I,O,H,Qt,TV) :-
-	(bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), T=<Qt),Ls) ->
-	 most_recent(Ls,H,O,TV);
+	copy_term([Arg,I],[CopyArg,CopyI]),
+	(call_tv(fluent(P,CopyArg,CopyI,_,_),_) ->
+	 (bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), T=<Qt),Ls), most_recent(Ls,H,O,TV));
 	 (H=0, TV=false)
 	).
+
 
 /*
 most_recent(Ls,H,O,TV) :-
