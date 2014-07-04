@@ -1,0 +1,38 @@
+| ?- consultQ("examples/tab").
+
+
+yes
+
+% initial checking before doing counterfactual
+| ?- query((kill_civilian,end_war),O).
+
+O = [tactical_bombing(1)] * [];
+
+no
+
+% updates explanation (exogenous variable)
+| ?- updates([(tactical_bombing,1)]).
+Pending update: tactical_bombing, at time 1
+
+yes
+
+% just testing end_war after update explanation
+| ?- query(end_war,O).
+
+O = [] * [];
+
+no
+
+% counterfactual: If killing civilian were not the case, then not ending war would be the case
+% intervention by *making* not kill_civilian
+| ?- updates([make_not(kill_civilian)]).
+Pending counterfactual update: not kill_civilian, at time 1.0100
+
+yes
+
+% ... war could still be ended (meaning that killing civilian is just side-effect, and not the cause to end war)
+| ?- query(end_war,O).
+
+O = [] * [];
+
+no

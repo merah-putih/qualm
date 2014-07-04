@@ -1,6 +1,14 @@
+abds([man/1,woman/1]).
+intv([take_pill/1]).
 
-intv([take_pill/0]).
+fail_pregnant(X) <- take_pill(X), person(X).
+fail_pregnant(X) <- not take_pill(X), man(X).
 
-fail_pregnant <- take_pill.
-fail_pregnant.
+take_pill(_).
+
+person(X) <- man(X).
+person(X) <- woman(X).
+
+expect(man(_)).
+expect(woman(_)).
 

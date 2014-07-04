@@ -1,0 +1,26 @@
+| ?- consultQ("examples/teb").
+
+
+yes
+| ?- query((kill_civilian,end_war),O).
+
+O = [terror_bombing(1)] * [];
+
+no
+| ?- updates([(terror_bombing,1)]).
+Pending update: terror_bombing, at time 1
+
+yes
+| ?- query(end_war,O).
+
+O = [] * [];
+
+no
+| ?- updates([make_not(kill_civilian)]).
+Pending counterfactual update: not kill_civilian, at time 1.0100
+
+yes
+| ?- query(end_war,O).
+
+no
+| ?- 

@@ -1,0 +1,69 @@
+Semi-factual: "Even if some person does not take the pill, they fail to get pregnant"
+
+% initially test of fail_pregnant, sk1 (any_man) and sk2 (any_woman) are skolems, the first argument of abducible man/woman is just a timestamp
+| ?- query(fail_pregnant(X),O).
+
+X = sk1
+O = [man(1,sk1)] * [];
+
+X = sk2
+O = [woman(1,sk2)] * [];
+
+no
+
+% update with abduced man (but not woman) as the exogenous variable
+| ?- updates([(man(sk1),1),(not woman(_),1)]).
+Pending update: man(sk1), at time 1
+Pending update: not woman(_h255), at time 1
+
+yes
+
+% just checking that fail_pregnant is still true after updating with the exogenous variable man(sk1)
+| ?- query(fail_pregnant(X),O).
+
+X = sk1
+O = [] * [];
+
+no
+
+% intervention by *making* not taking pill (for any_man)
+| ?- updates([make_not(take_pill(sk1))]).
+Pending counterfactual update: not take_pill(sk1), at time 1.0100
+
+yes
+
+% ... men are still fail to pregnant.
+| ?- query(fail_pregnant(X),O).
+
+X = sk1
+O = [] * [];
+
+no
+
+On the other hand, if we consider updating abduced woman(sk2) as exogenous variable, we have women do not fail to get pregnant: (I don't show initial test anymore, the same as above):
+
+% update with abduced woman (but not man) as the exogenous variable
+| ?- updates([(not man(_),1),(woman(sk2),1)]).
+Pending update: not man(_h201), at time 1
+Pending update: woman(sk2), at time 1
+
+yes
+
+% just checking that fail_pregnant is still true after updating with the exogenous variable woman(sk2)
+| ?- query(fail_pregnant(X),O).
+
+X = sk2
+O = [] * [];
+
+no
+
+% intervention by *making* not taking pill (for any_woman)
+| ?- updates([make_not(take_pill(sk2))]).
+Pending counterfactual update: not take_pill(sk2), at time 1.0100
+
+yes
+
+% ... women are *not* fail to get pregnant
+| ?- query(fail_pregnant(X),O).
+
+no

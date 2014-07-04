@@ -1,0 +1,52 @@
+% consulting QUALM's example (forest.ab)
+| ?- consultQ("examples/forest").
+
+
+yes
+
+% test initially that leaves are dry and forest is in fire, resulting in explanation (exogenous variables)
+% query(Q,O) is used to launch a query Q with results in O (an abductive solution represented by [positive_abducibles]*[negative_abducibles]
+| ?- query((dry_leaves,forest_fire),O).
+
+O = [dry_leaves(1),storm(1)] * [];
+
+no
+
+% (pending) updates the explanation into KR to provide context for counterfactual
+| ?- updates([(dry_leaves,1),(storm,1)]).
+Pending update: dry_leaves, at time 1
+Pending update: storm, at time 1
+
+yes
+
+% just checking whether forest_fire is still true (by first activating pending updates, now they become facts)
+| ?- query(forest_fire,O).
+
+O = [] * [];
+
+no
+
+% evaluating counterfactual: if the leaves were not dry, then forest fire wouldn't have occurred
+% first, intervention, by *making* not dry_leaves, i.e., update with make_not(dry_leaves)
+| ?- updates([make_not(dry_leaves)]).
+Pending counterfactual update: not dry_leaves, at time 1.0100
+
+yes
+
+% ... forest_fire wouldn't have occurred
+| ?- query(forest_fire,O).
+
+no
+
+% return to factual mode, by launching update of negation of make_not(dry_leaves)
+| ?- updates([not make_not(dry_leaves)]).
+Pending cancel counterfactual update: not dry_leaves, at time 1.0200
+
+yes
+
+% querying forest_fire will return true again
+| ?- query(forest_fire,O).
+
+O = [] * [];
+
+no
