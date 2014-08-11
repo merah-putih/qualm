@@ -1,0 +1,13 @@
+% variant of forest.ab by having two abductive causes for fire: storm or barbecue
+
+abds([barbecue/0,dry_leaves/0,storm/0]).
+
+forest_fire <- barbecue, dry_leaves.
+forest_fire <- lightning, dry_leaves, leaves_on_ground.
+
+lightning <- storm.
+leaves_on_ground <- storm.
+
+expect(dry_leaves).
+expect(storm).
+expect(barbecue).
