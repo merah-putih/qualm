@@ -1,0 +1,32 @@
+abds([terror_bombing/0,tactical_bombing/0]).
+
+intv([kill_civilian/0]).
+
+%end_war <- end_war_teb, end_war_tab.
+
+% teb
+
+end_war <- lower_moral_enemy.
+
+kill_civilian <- terror_bombing.
+
+lower_moral_enemy <- kill_civilian.
+
+expect(terror_bombing).
+
+% tab
+
+end_war <- military_target.
+
+military_target <- tactical_bombing.
+
+kill_civilian <- tactical_bombing.
+
+expect(tactical_bombing).
+
+% IC
+
+<- tactical_bombing, terror_bombing.
+
+
+

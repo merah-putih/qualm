@@ -1,0 +1,7 @@
+abds([a / 0,b / 0,c / 0]).
+q <- consider(a).
+r <- consider(b).
+r <- consider(c).
+expect(a).
+expect(b).
+expect(c).
