@@ -1,0 +1,11 @@
+abds([a/0,b/0,c/0]).
+
+q <- a.
+r <- b.
+r <- c.
+
+expect(a).
+expect(b).
+expect(c).
+
+%<- a,b.

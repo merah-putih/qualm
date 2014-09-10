@@ -50,15 +50,18 @@ processI(_).
 
 
 %abducibles
-processPred(abds(L)) :- write(abds(L)), write('.'), nl, my_assert(abds(L)).
-processPred(intv(L)) :- write(intv(L)), write('.'), nl, my_assert(intv(L)).
+processPred(abds(L)) :- !,
+	write(abds(L)), write('.'), nl, my_assert(abds(L)).
+processPred(intv(L)) :- !,
+	write(intv(L)), write('.'), nl, my_assert(intv(L)).
 
 %change abducibles to consider form
-processPred((H <- B)) :-
+processPred((H <- B)) :- !,
 	collectPrefsArt(H,Art,ProH,_),
 	assertIfNot(hasClauses(ProH,Art)),
 	processRuleAbdsIntv(H,B). 
-processPred(( <- B)) :- processICAbds(B). 
+
+processPred(( <- B)) :- !, processICAbds(B). 
 
 %others
 processPred(C) :-
@@ -80,8 +83,8 @@ processRuleAbdsIntv(H,B) :-
 
 processICAbds(B) :- 
 	comma_to_list(B, L), 
-	abd_to_consider(L, L1),
-	write('<- '), write_list(L1), nl. 
+	%abd_to_consider(L, L1),
+	write('<- '), write_list(L), nl. 
 
 
 %This predicate is to change the abducible predicates, e.g. A, in the body of any rule

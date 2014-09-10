@@ -123,13 +123,17 @@ clean_trie :-
 %%%%
 
 newNumberOfUpdate(1) :-
-        \+ current(_), assert(current(2)).
+        \+ current(_),
+%	assert(current(1)).
+	assert(current(2)).
 newNumberOfUpdate(C) :-
         retract(current(C)), C1 is C+1, assert(current(C1)).
 
+% move one time ahead
 uptime :-
 	newNumberOfUpdate(_).
 
+% jump to time Qt, and make Qt current time
 uptime(Qt) :-
 	retract(current(_)),
 	assert(current(Qt)).
@@ -468,14 +472,14 @@ holds(Lit,I,O,H,Qt) :-
 
 compute(P,Arg,I,O,H,Qt,TV) :-
 	(P=consider;P=not_consider), !,
-	copy_term([Arg,I],[CopyArg,CopyI]),
-	((G =.. [P,CopyI,_,_|CopyArg], call(G)) ->
+	copy_term([Arg,I,O],[CopyArg,CopyI,CopyO]),
+	((G =.. [P,CopyI,CopyO,_|CopyArg], call(G)) ->
 	 (bagof((T,O,true),(G =.. [P,I,O,T|Arg], call(G), T=<Qt),Ls), most_recent(Ls,H,O,TV));
 	 (H=0, TV=false)
 	).
 compute(P,Arg,I,O,H,Qt,TV) :-
-	copy_term([Arg,I],[CopyArg,CopyI]),
-	(call_tv(fluent(P,CopyArg,CopyI,_,_),_) ->
+	copy_term([Arg,I,O],[CopyArg,CopyI,CopyO]),
+	(call_tv(fluent(P,CopyArg,CopyI,CopyO,_),_) ->
 	 (bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), T=<Qt),Ls), most_recent(Ls,H,O,TV));
 	 (H=0, TV=false)
 	).
