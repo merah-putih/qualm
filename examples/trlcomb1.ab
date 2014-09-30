@@ -1,3 +1,7 @@
+% There are two sidetracks: left with a bystander, right a loop with a fat man. In the beginning the agent didn't know that there was a fat man on the looping right sidetrack, so it makes sense only to divert the trolley to the left to save the five. It causes harm, but it is DDE permissible (verified by counterfactual) 
+
+I know later (today) that there is a fat man on the right sidetrack that can stop the trolley. Had I known what I know today, it turns out that alternatively diverting the trolley is not DDE morally better (it is DDE impermissible), because it causes a harm of hitting the man as an instrument to save the five.
+
 abds([divert/1]).
 
 intv([hit_man/1]).
@@ -12,6 +16,4 @@ save_five <- train_to(left).
 save_five <- hit_man(right).
 
 expect(divert(left)).
-expect(divert(right)).
-expect_not(divert(right)).
 man_on(left).
