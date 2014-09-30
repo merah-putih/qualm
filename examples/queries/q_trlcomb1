@@ -1,0 +1,102 @@
+
+
+| ?- consultQ("examples/trlcomb1").
+
+
+yes
+
+% get the initial abduced context from the observations that the man on the left sidetrack was hit by the trolley and the five were saved.
+| ?- query((hit_man(left),save_five),Sol).
+
+Sol = [divert(1,left)] * [];
+
+no
+
+% ready to update the initial abduced context (still pending until initiated by a subsequent query)
+| ?- updates([(divert(left),1)]).
+Pending update: divert(left), at time 1
+
+yes
+
+% just testing that after update the above abductive solution divert(left), save_five holds, now abducing nothing, because divert(left) is now a fact. 
+| ?- query(save_five,Sol).
+
+Sol = [] * [];
+
+no
+
+% counterfactual, by hypothetical update 'had the man on the left sidetrack not been hit by the trolley' 
+| ?- updates([make_not(hit_man(left))]).
+Pending counterfactual update: not hit_man(left), at time 1.0100
+
+yes
+
+% the conclusion is that the five was still be saved (thus hitting is not instrumental for saving the five -> DDE permissible)
+| ?- query(save_five,Sol).
+
+Sol = [] * [];
+
+no
+
+% return to the factual setting, by cancelling the previous hypothetical update 
+| ?- updates([not make_not(hit_man(left))]).
+Pending cancel counterfactual update: not hit_man(left), at time 1.0200
+
+yes
+
+
+% Now, at T=2, we know that there is a man on the right sidetrack, and furthermore it is possible to divert the trolley to the looping right sidetrack to save the five by hitting the man on this sidetrack (there is an expectation to it and no contrary to that expectation), and therefore the previous alternative divert(left) is not chosen.
+
+| ?- updates([man_on(right),expect(divert(right)),not expect_not(divert(right)), not divert(left)]).
+Pending update: man_on(right), at current time 2
+Pending update: expect(divert(right)), at current time 2
+Pending update: not expect_not(divert(right)), at current time 2
+Pending update: not divert(left), at current time 2
+
+yes
+
+% given this new knowledge, check the new abduced context
+| ?- query((hit_man(right),save_five),Sol).
+
+Sol = [divert(2,right)] * [];
+
+no
+
+% update the new abduced context by choosing to divert the trolley to the right sidetrack
+| ?- updates([(divert(right),2)]).
+Pending update: divert(right), at time 2
+
+yes
+
+% just checking, that save_five is true without abducing due to the fact divert(right) after update
+| ?- query(save_five,Sol).
+
+Sol = [] * [];
+
+no
+
+% Had I known what I know today, if the man on the right sidetrack had not been hit by the trolley (as the result of diverting the trolley to the right), ... -> this is accomplished by a new hypothetical update
+| ?- updates([make_not(hit_man(right))]).
+Pending counterfactual update: not hit_man(right), at time 2.0100
+
+yes
+
+% ... would the five have been saved? No.
+So, hitting the man on the right sidetrack is instrumental to save the five. Thus it is DDE impermissible. That is, had I known what I know today, alternatively diverting the trolley to the right sidetrack is no DDE morally better than diverting the trolley to the left sidetrack.
+
+| ?- query(save_five,Sol).
+
+no
+
+% back to the factual setting, by cancelling the latest hypothetical update
+| ?- updates([not make_not(hit_man(right))]).
+Pending cancel counterfactual update: not hit_man(right), at time 2.0200
+
+yes
+
+% factually, the five was saved
+| ?- query(save_five,Sol).
+
+Sol = [] * [];
+
+no
