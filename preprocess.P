@@ -312,7 +312,36 @@ process_expectation :-
 
 process_expectation([]).
 process_expectation([A/N|As]) :-
-	%member(A/N,As),
+	functor(Abd,A,N),
+	copy_term(Abd,Abd_),
+	findall(Abd,rule(expect(Abd),[]),ListE),
+	process_expect(Abd,ListE),
+	findall(Abd_,rule(expect_not(Abd_),[]),ListN),
+	process_expect_not(ListE,ListN),
+	process_expectation(As).
+
+process_expect(Abd,[]) :-
+	processAtom(not_expect,[Abd],I,I,1,N_EA),
+	assert_FailRules(expect,N_EA).
+process_expect(_,[_|_]).
+
+process_expect_not([],_).
+process_expect_not([E|Es],ListN) :-
+	member(E,ListN),!,
+	process_expect_not(Es,ListN).
+process_expect_not([E|Es],ListN) :-
+	processAtom(not_expect_not,[E],I,I,1,EA),
+	assert_FailRules(expect_not,EA),
+	process_expect_not(Es,ListN).
+
+
+	
+	
+
+	
+/*
+process_expectation([]).
+process_expectation([A/N|As]) :-
 	functor(Abd,A,N),
 	(rule(expect(Abd),[]) -> true;
 	 (processAtom(not_expect,[Abd],I,I,1,N_EA),
@@ -323,7 +352,7 @@ process_expectation([A/N|As]) :-
 	  assert_FailRules(expect_not,EA))
 	),
 	process_expectation(As).
-
+*/
 
 process_false :-
 	(hasDefRules(false,0) -> true;

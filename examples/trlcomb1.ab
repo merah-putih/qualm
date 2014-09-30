@@ -1,0 +1,17 @@
+abds([divert/1]).
+
+intv([hit_man/1]).
+
+train_to(D) <- divert(D).
+hit_man(D) <- train_to(D), man_on(D).
+
+% left side track (bystander)
+save_five <- train_to(left).
+
+% right side track (loop) 
+save_five <- hit_man(right).
+
+expect(divert(left)).
+expect(divert(right)).
+expect_not(divert(right)).
+man_on(left).
