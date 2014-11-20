@@ -1,0 +1,46 @@
+| ?- [qualm].
+[qualm loaded, cpu time used: 0.0010 seconds]
+[preprocess loaded, cpu time used: 0.0010 seconds]
+[list_utils loaded]
+[app_utils loaded]
+
+yes
+| ?- consultQ("examples/forest2").
+
+
+yes
+| ?- query((lightning,forest_fire),O).
+
+O = [barbecue(1),storm(1)] * [];
+
+O = [storm(1)] * [];
+
+no
+| ?- updates([(storm,1),(not barbecue,1)]).
+Pending update: storm, at time 1
+Pending update: not barbecue, at time 1
+
+yes
+| ?- query(forest_fire,O).
+
+O = [] * [];
+
+no
+| ?- updates([make_not(lightning)]).
+Pending counterfactual update: not lightning, at time 1.0100
+
+yes
+| ?- query(forest_fire,O).
+
+no
+| ?- updates([not make_not(lightning)]).
+Pending cancel counterfactual update: not lightning, at time 1.0200
+
+yes
+| ?- query(forest_fire,O).
+
+O = [] * [];
+
+no
+| ?- 
+
