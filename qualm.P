@@ -1,6 +1,6 @@
 :- consult(preprocess).
 
-:- import member/2 from basics.
+:- import member/2,length/2 from basics.
 :- import trie_create/2, trie_drop/1, trie_intern/2, trie_property/2, trie_interned/2 from intern.
 :- import incr_assert/1, incr_retractall/1, incr_assert_inval/1 from increval.
 :- import prepare/1 from gensym.
@@ -167,6 +167,7 @@ consultQualm(File) :-
 
 consider(In,Out,T,Abd) :-	
 	consider_ab(E,T,Abd),
+	ensure_ground(Abd),
 	produce(Out, In, E).
 
 
@@ -179,7 +180,7 @@ consider_ab(E,T,Abd) :-
 	latest([(not_make_not,[Abd],O1,E,H),(upd_abd,[Abd],[]*[],O1,G)],T).
 
 consider_ab(E,T,Abd) :-
-	ensure_ground(Abd),
+	%ensure_ground(Abd),
 	Abd =.. [AbdL|AbdArg],
 	TimedAbd =.. [AbdL,T|AbdArg],	
 	fluent(expect,[Abd],[TimedAbd] * [],Acc,F),
@@ -477,12 +478,24 @@ compute(P,Arg,I,O,H,Qt,TV) :-
 	 (bagof((T,O,true),(G =.. [P,I,O,T|Arg], call(G), T=<Qt),Ls), most_recent(Ls,H,O,TV));
 	 (H=0, TV=false)
 	).
+
+compute(P,Arg,I,O,H,Qt,TV) :-
+	length(Arg,Len_Arg),
+	Len_NArg is Len_Arg+3,
+	functor(P1,P,Len_NArg),
+	(clause(P1,_) ->
+	 (bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), T=<Qt),Ls), most_recent(Ls,H,O,TV));
+	 (H=0, TV=false)
+	).
+
+/*
 compute(P,Arg,I,O,H,Qt,TV) :-
 	copy_term([Arg,I,O],[CopyArg,CopyI,CopyO]),
 	(call_tv(fluent(P,CopyArg,CopyI,CopyO,_),_) ->
 	 (bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), T=<Qt),Ls), most_recent(Ls,H,O,TV));
 	 (H=0, TV=false)
 	).
+*/
 
 
 /*

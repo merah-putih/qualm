@@ -314,9 +314,9 @@ process_expectation([]).
 process_expectation([A/N|As]) :-
 	functor(Abd,A,N),
 	copy_term(Abd,Abd_),
-	findall(Abd,rule(expect(Abd),[]),ListE),
+	findall(Abd,rule(expect(Abd),_),ListE),
 	process_expect(Abd,ListE),
-	findall(Abd_,rule(expect_not(Abd_),[]),ListN),
+	findall(Abd_,rule(expect_not(Abd_),_),ListN),
 	process_expect_not(ListE,ListN),
 	process_expectation(As).
 

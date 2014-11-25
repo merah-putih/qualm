@@ -24,3 +24,4 @@ heavy(X) <- weight(X,W), threshold(T), prolog(W>T).
 weight(heavy_guy,100).
 weight(cargo,200).
 threshold(90).
+
