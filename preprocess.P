@@ -483,10 +483,11 @@ find_rules(H,A,R) :-
 	index_rules(Head,1,R).
 
 index_rules(Head,N,[rule(N,Head,Body)|Rs]) :-
+	copy_term(Head,Head1),
 	retract(rule(Head,Body)), !,
 	my_assert(rule(N,Head,Body)),
 	NewN is N+1,
-	index_rules(Head,NewN,Rs).
+	index_rules(Head1,NewN,Rs).
 index_rules(_,_,[]).
 
 
@@ -494,6 +495,11 @@ process_pos_rules([]).
 process_pos_rules([rule(_,H,B)|Rs]) :-
 	process_pos_rule(H,B), 
 	process_pos_rules(Rs).
+
+process_pos_rule(H,[]) :- !,
+	H =.. [Name|Args],
+	ProH =.. [Name,I,I,1|Args],
+	my_incr_assert(ProH).	
 
 process_pos_rule(H,[(#r,RuleName,TS)]) :- !, 
 	H =.. [Name|Args],
@@ -506,7 +512,6 @@ process_pos_rule(H,B) :-
 	ProH =.. [Name,I,O,TS|Args],
 	processBodyPos(B,[],Latest,ProB,I,O,TS),
 	my_incr_assert((ProH :- ProB,Latest)).
-
 
 processBodyPos([A],Ls,Latest,ProA,I,O,TS) :- !,
 	processBodyLatest(A,L,ProA,I,O),

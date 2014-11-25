@@ -1,0 +1,26 @@
+abds([divert/1,push/1]).
+
+intv([hit/2]).
+
+run_sidetrack(X) <- divert(X).
+
+hit(X,Y) <- run_sidetrack(X),on_sidetrack(Y).
+
+save_from(X) <- run_sidetrack(X), not sidetrack(loop).
+save_from(X) <- sidetrack(loop), hit(X,Y), heavy(Y).
+
+on_sidetrack(heavy_guy).
+
+on_sidetrack(Y) <- push(Y).  
+on_sidetrack(Y) <- push(X), near(Y,X).
+
+expect(divert(_)).
+expect(push(X)) <- available(X). 
+
+near(heavier_guy,cargo).
+
+heavy(X) <- weight(X,W), threshold(T), prolog(W>T).
+
+weight(heavy_guy,100).
+weight(cargo,200).
+threshold(90).
