@@ -535,10 +535,6 @@ most_recent(Ls,H,O,TV) :-
 	member((H,O,TV),Ns).
 */
 
-most_recent(Ls,H,O,TV) :-
-	unique(Ls,Ms),
-	member((H,O,TV),Ms).
-
 
 minimal([X|Xs],Ys) :-
 	minimal(Xs,[X],Ys).
@@ -562,6 +558,15 @@ super(X,[Y|Ys],[Y|Zs]) :-
 
 subset(P1*N1,P2*N2) :-
 	subseq(P1,P2,_), subseq(N1,N2,_).
+
+
+%%%%
+
+/*
+most_recent(Ls,H,O,TV) :-
+	unique(Ls,Ms),
+	member((H,O,TV),Ms).
+*/
 
 %%%%
 
@@ -592,12 +597,20 @@ same_str([X1|Xs1]*[X2|Xs2],[Y1|Ys1]*[Y2|Ys2]) :-
 	X1 @= Y1, X2 @= Y2,
 	same_str(Xs1*Xs2,Ys1*Ys2).
 
+%%%%
+
+most_recent([(H,O,TV)],H,O,TV).
+most_recent([A,B|Ls],H,O,TV) :-
+	maxi_true(A,B,(H_,O_,TV_)),
+	most_recent([(H_,O_,TV_)|Ls],H,O,TV).
+
 maxi_true((T1,O1,true),(_,_,undefined),(T1,O1,true)) :- !.
 maxi_true((_,_,undefined),(T2,O2,true),(T2,O2,true)) :- !.
 maxi_true((T1,O1,TV),(T2,_,TV),(T1,O1,TV)) :-
 	T1 > T2, !.
 maxi_true((_,_,_),(T2,O2,TV),(T2,O2,TV)).
 
+%%%%
 
 verify(_,undefined,_,true) :- !, fail.
 verify(H,TV,H_,_) :- H >= H_, TV.
