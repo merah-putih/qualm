@@ -6,22 +6,46 @@ run_sidetrack(X) <- divert(X).
 
 hit(X,Y) <- run_sidetrack(X),on_sidetrack(Y).
 
-save_from(X) <- run_sidetrack(X), not sidetrack(loop).
-save_from(X) <- sidetrack(loop), hit(X,Y), heavy(Y).
+save_from(X) <- run_sidetrack(X), sidetrack(straight).
+save_from(X) <- sidetrack(loop), hit(X,Y), heavy_enough(Y).
 
-on_sidetrack(heavy_guy).
+on_sidetrack(thin_guy) <- partial_sight.
+on_sidetrack(heavy_guy) <- full_sight.
+
+sidetrack(straight) <- partial_sight.
+sidetrack(loop) <- full_sight.
+
+full_sight <- not partial_sight.
+partial_sight <- foggy.
+
+<- save_from(t), sidetrack(loop), person(Y), hit(t,Y).
+
+person(thin_guy).
+person(heavy_guy).
+person(heavier_guy).
 
 on_sidetrack(Y) <- push(Y).  
 on_sidetrack(Y) <- push(X), near(Y,X).
 
 expect(divert(_)).
-expect(push(X)) <- available(X). 
+expect(push(X)) <- available(X), divert(t).
 
 near(heavier_guy,cargo).
 
-heavy(X) <- weight(X,W), threshold(T), prolog(W>T).
+heavy_enough(X) <- weight(X,W), threshold(T), prolog(W>T).
 
 weight(heavy_guy,100).
 weight(cargo,200).
-threshold(90).
+weight(heavier_guy,160).
+
+threshold(90) <- mini(X).
+threshold(150) <- maxi(X).
+
+%run_maintrack(X) <- sidetrack(loop), maxi(X), hit(X,Y), not heavy_enough(Y).
+
+%<- run_maintrack(t), save_from(t).
+
+mini(t).
+
+maxi(X) <- not mini(X).
 

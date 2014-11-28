@@ -429,13 +429,26 @@ test_abducible(G,H) :-
 
 query(G,O) :-
 	current(Qt),
-	query(G,O,Qt).
+	query_etc(G,[]*[],O,Qt).
 
-query(G,O,Qt) :-
+query(G,I,O) :-
+	current(Qt),
+	query_etc(G,I,O,Qt).
+
+
+query_etc(G,I,O,Qt) :-
 	act_assert(Qt),
-	query(G,[]*[],O,Qt),
+	(retract(act_pending) -> newNumberOfUpdate(_);
+	 true),	
+	query(G,I,O,Qt).
+
+/*
+query_etc(G,I,O,Qt) :-
+	act_assert(Qt),
+	query(G,I,O,Qt),
 	(retract(act_pending) -> newNumberOfUpdate(_);
 	 true).
+*/
 
 query(not false,I,O,Qt) :- !,
 	holds(not false,I,O,Qt).
@@ -470,7 +483,7 @@ holds(Lit,I,O,H,Qt) :-
 	compute(P_,Arg,I,O,H_,Qt,TV_),
 	verify(H,TV,H_,TV_).
 
-
+/*
 compute(P,Arg,I,O,H,Qt,TV) :-
 	(P=consider;P=not_consider), !,
 	copy_term([Arg,I,O],[CopyArg,CopyI,CopyO]),
@@ -478,7 +491,23 @@ compute(P,Arg,I,O,H,Qt,TV) :-
 	 (bagof((T,O,true),(G =.. [P,I,O,T|Arg], call(G), T=<Qt),Ls), most_recent(Ls,H,O,TV));
 	 (H=0, TV=false)
 	).
+*/
 
+compute(P,Arg,I,O,H,Qt,TV) :-
+	(P=consider;P=not_consider), !,
+	(bagof((Arg,Ms),G^bagof((T,O,true),(G =.. [P,I,O,T|Arg], call(G), T=<Qt),Ms),Ls) ->
+	    (member((Arg,Ms),Ls),most_recent(Ms,H,O,TV));	    
+	    (H=0, TV=false)
+	).
+	    
+compute(P,Arg,I,O,H,Qt,TV) :-
+	(bagof((Arg,Ms),bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), T=<Qt),Ms),Ls) ->
+	    (member((Arg,Ms),Ls),most_recent(Ms,H,O,TV));
+	    (H=0, TV=false)
+	).
+
+
+/*
 compute(P,Arg,I,O,H,Qt,TV) :-
 	length(Arg,Len_Arg),
 	Len_NArg is Len_Arg+3,
@@ -487,6 +516,7 @@ compute(P,Arg,I,O,H,Qt,TV) :-
 	 (bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), T=<Qt),Ls), most_recent(Ls,H,O,TV));
 	 (H=0, TV=false)
 	).
+*/
 
 /*
 compute(P,Arg,I,O,H,Qt,TV) :-
