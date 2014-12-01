@@ -659,10 +659,21 @@ latest(Ls,T) :-
 	latest_time(Ls,T),
 	not_overridden(Ls,T).
 
-
+% alternative for verify_lits when T is still a variable,
+% unify T with query time.
+/*
 verify_lits(Ls,T) :-
 	(var(T) -> qt(T); true),
 	test_lits(Ls,T).
+*/
+
+% alternative for verify_lits when T is still a variable,
+% unify T with the latest time in Ls.
+
+verify_lits(Ls,T) :-
+	(var(T) -> latest_time(Ls,T); true),
+	test_lits(Ls,T).
+
 
 test_lits([],_).
 test_lits([L|Ls],T) :-
@@ -680,11 +691,14 @@ test_lits([(P,Arg,I,O,H)|Ls],T) :-
 	test_lits(Ls,T).
 
 not_overridden([],_).
+%not_overridden([_],_) :- !.
 not_overridden([(P,Arg,I,O,H)|Ls],T) :- !,
 	not_overridden(P,Arg,I,O,H,T),
 	not_overridden(Ls,T).
 not_overridden([_|Ls],T) :-
 	not_overridden(Ls,T).
+
+not_overridden(prolog,_,_,_,_,_) :- !.
 
 not_overridden(Pred,Arg,In,Out,T,MaxT) :-
 	atom_compl(Pred,Pred_),

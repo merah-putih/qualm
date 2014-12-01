@@ -7,7 +7,7 @@ run_sidetrack(X) <- divert(X).
 hit(X,Y) <- run_sidetrack(X),on_sidetrack(Y).
 
 save_from(X) <- run_sidetrack(X), sidetrack(straight).
-save_from(X) <- sidetrack(loop), hit(X,Y), heavy_enough(Y).
+save_from(X) <- sidetrack(loop), hit(X,Y), heavy_lenough(Y).
 
 on_sidetrack(thin_guy) <- partial_sight.
 on_sidetrack(heavy_guy) <- full_sight.
