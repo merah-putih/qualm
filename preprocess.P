@@ -288,7 +288,10 @@ processClauses :-
 	process_Abds,
 	%process_FailRules,
 	process_Facts,
+	tellXFile("tab"),
+	writeTableDecls,
 	process_Rules,
+	told,
 	process_AssertedRules.
 
 process_init :-
@@ -466,11 +469,49 @@ processNegFact(H,A) :-
 process_Rules :-
 	retract(hasRules(H,A)),
 	find_rules(H,A,R),
-	process_pos_rules(R),
+        process_tab_rules(R),
+	process_pos_rule(H,A),
 	process_neg_rule(H,A,R),
 	process_star_rules(H,A,R),
 	process_Rules.
 process_Rules.
+
+
+
+tellXFile(FileName) :-
+	append(FileName,".P",FExt),
+	name(ProF,FExt),
+	tell(ProF).
+
+writeTableDecls :-
+	findTabledPred(Ps),
+	writeTabledDecl(Ps).
+
+
+findTabledPred(Ps) :-
+	findall(Sig,findTPred(Sig),Ps).
+
+hasNegRule(H) :- negGoal(H), hasRules(H).
+
+findTPred(Sig) :-
+	hasRules(N,A),
+	ruleNames(N,N_ab,_,_),
+	signature(N_ab,A,2,Sig).
+
+% signature/4:
+% N/NewA is the signature of the tabled predicate N.
+
+signature(N,A,P,N/NewA) :-
+	NewA is A+P.
+
+writeTabledDecl([]).
+writeTabledDecl([P|Ps]) :-
+	write(':- table '), write(P), write(' as incremental.'), nl,
+%	writeL([':- table ', P, ' as incremental.']),
+	writeTabledDecl(Ps).
+
+
+	
 
 /*
 find_rules(H,A,R) :-
@@ -490,28 +531,50 @@ index_rules(Head,N,[rule(N,Head,Body)|Rs]) :-
 	index_rules(Head1,NewN,Rs).
 index_rules(_,_,[]).
 
+extract_abds(B,L_Abds,L_NAbds) :- extract_abds(B,[]*[],L_Abds,L_NAbds).
 
-process_pos_rules([]).
-process_pos_rules([rule(_,H,B)|Rs]) :-
-	process_pos_rule(H,B), 
-	process_pos_rules(Rs).
+extract_abds([],A,A,[]).
+extract_abds([(consider,[A],_)|Bs],PI*NI,AO,NA) :- !,
+	insertElem(A,PI,PO), 
+	extract_abds(Bs,PO*NI,AO,NA).
+extract_abds([(not consider,[A],_)|Bs],PI*NI,AO,NA) :- !,
+	insertElem(A,NI,NO), 
+	extract_abds(Bs,PI*NO,AO,NA).
+extract_abds([B|Bs],AI,AO,[B|Cs]) :-
+	extract_abds(Bs,AI,AO,Cs).
 
-process_pos_rule(H,[]) :- !,
+process_tab_rules([]).
+process_tab_rules([rule(_,H,B)|Rs]) :-
+	extract_abds(B,LAbds,FilB),
+	process_tab_rule(H,LAbds,FilB), 
+	process_tab_rules(Rs).
+
+process_tab_rule(H,LAbds,[]) :- !,
 	H =.. [Name|Args],
-	ProH =.. [Name,I,I,1|Args],
-	my_incr_assert(ProH).	
+	ruleNames(Name,N_ab,_,_),
+	ProH =.. [N_ab,LAbds,1|Args],
+	write(ProH), writeln('.').
+%	writeL([ProH, '.']).
+	%my_incr_assert(ProH).	
 
-process_pos_rule(H,[(#r,RuleName,TS)]) :- !, 
+process_tab_rule(H,LAbds,[('#(r)',RuleName,TS)]) :- !, 
 	H =.. [Name|Args],
-	ProH =.. [Name,I,O,TS|Args],
-	ProB =.. ['#r',I,O,TS|RuleName],
-	my_incr_assert((ProH :- ProB)).
+	ruleNames(Name,N_ab,_,_),
+	ProH =.. [N_ab,E,TS|Args],
+	ProB =.. ['#(r)',LAbds,E,TS|RuleName],
+	write(ProH), write(' :- '), writeq(ProB), writeln('.').
+%	writeL([ProH, ' :- ', ProB, '.']).
+%	my_incr_assert((ProH :- ProB)).
 
-process_pos_rule(H,B) :-
+process_tab_rule(H,LAbds,B) :-
 	H =.. [Name|Args],
-	ProH =.. [Name,I,O,TS|Args],
-	processBodyPos(B,[],Latest,ProB,I,O,TS),
-	my_incr_assert((ProH :- ProB,Latest)).
+	ruleNames(Name,N_ab,_,_),
+	ProH =.. [N_ab,E,TS|Args],
+	processBodyPos(B,[],Latest,ProB,LAbds,E,TS),
+	write(ProH), write(' :- '), writeq(ProB), write(', '),
+	writeq(Latest), writeln('.'). 
+%	writeL([ProH, ' :- ', ProB, ', ', Latest, '.']).
+%	my_incr_assert((ProH :- ProB,Latest)).
 
 processBodyPos([A],Ls,Latest,ProA,I,O,TS) :- !,
 	processBodyLatest(A,L,ProA,I,O),
@@ -520,6 +583,17 @@ processBodyPos([A],Ls,Latest,ProA,I,O,TS) :- !,
 processBodyPos([A|B],Ls,Latest,(ProA,ProB),I,O,TS) :-
 	processBodyLatest(A,L,ProA,I,OA),
 	processBodyPos(B,[L|Ls],Latest,ProB,OA,O,TS).
+
+
+process_pos_rule(H,A) :-
+	makeList(A,Args),
+	ProH =.. [H,I,O,T|Args],
+	ruleNames(H,H_ab,_,_),
+	ProTabledH =.. [H_ab,E,T|Args],
+	my_incr_assert((ProH :- ProTabledH, produce(O,I,E))).
+%	RuleProH = [ProH, ' :- ', ProTabledH, ', produce(', O, ', ', I, ', ', E, ').'],
+%	writeL(RuleProH).
+
 
 process_neg_rule(Name,A,R) :-
 	ruleNames(Name,_,NegN,N_st),

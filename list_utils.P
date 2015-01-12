@@ -1,5 +1,9 @@
 :- import variant/2 from subsumes.
 
+writeL([]) :- nl.
+writeL([H|L]) :- write(H), writeL(L).
+
+
 write_list([X]) :- write(X), write('.').
 write_list([X|L]) :- L \=[], write(X), write(','), write_list(L). 
 

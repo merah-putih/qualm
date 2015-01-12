@@ -143,6 +143,7 @@ uptime(Qt) :-
 
 consultQ(File) :-
 	consultQualm(File),
+	[tab],
 	newNumberOfUpdate(_),
 	upper_time(20).
 
@@ -162,6 +163,7 @@ consultQualm(File) :-
 
 %%%%
 
+/*
 :- table consider_ab/3 as incremental.
 
 
@@ -169,26 +171,20 @@ consider(In,Out,T,Abd) :-
 	consider_ab(E,T,Abd),
 	ensure_ground(Abd),
 	produce(Out, In, E).
+*/
 
+consider(I,O,T,Abd) :-
+	fluent(make,[Abd],I,O,T).
 
-consider_ab(E,T,Abd) :-
-	fluent(make,[Abd],[]*[],E,T).
+consider(I,O,T,Abd) :-
+	fluent(upd_abd,[Abd],I,O1,G), !,
+	fluent(not_make_not,[Abd],O1,O,H),
+	latest([(not_make_not,[Abd],O1,O,H),(upd_abd,[Abd],I,O1,G)],T).
 
-consider_ab(E,T,Abd) :-
-	fluent(upd_abd,[Abd],[]*[],O1,G), !,
-	fluent(not_make_not,[Abd],O1,E,H),
-	latest([(not_make_not,[Abd],O1,E,H),(upd_abd,[Abd],[]*[],O1,G)],T).
-
-consider_ab(E,T,Abd) :-
-	%ensure_ground(Abd),
-	Abd =.. [AbdL|AbdArg],
-	TimedAbd =.. [AbdL,T|AbdArg],	
-	fluent(expect,[Abd],[TimedAbd] * [],Acc,F),
-	fluent(not_expect_not,[Abd],Acc,E,G),
-	latest([(not_expect_not,[Abd],Acc,E,G),(expect,[Abd],[TimedAbd] * [],Acc,F)],T).
-
-
-
+consider(I,O,T,Abd) :-
+	Abd =.. [Pred|Args],
+	A =.. [Pred,I,O,T|Args],
+	call(A).
 
 %%%%%
 
@@ -217,8 +213,9 @@ consider_st1((make_not,[A],O1,O,T),I,O,A) :-
 
 consider_st2(T,I,O,A) :-
 	(fluent(upd_abd,[A],_,_,_) ->
-	 fluent(not_upd_abd,[A],I,O,T);
-	 consider_st2_aux(T,I,O,A)
+	    fluent(not_upd_abd,[A],I,O,T);
+	    abduce_not(T,I,O,A)
+%	 consider_st2_aux(T,I,O,A)
 	).
 
 

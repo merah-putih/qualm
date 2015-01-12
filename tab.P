@@ -1,0 +1,2 @@
+:- table p_ab / 2 as incremental.
+p_ab(_h3518,_h3481) :- '#(r)'([a] * [],_h3518,_h3481,p,'[consider(a)]').
