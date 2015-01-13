@@ -490,9 +490,15 @@ compute(P,Arg,I,O,H,Qt,TV) :-
 	).
 */
 
+valid_abd(T,Qt) :-
+	(var(T) -> T=Qt;
+	    T=<Qt
+	).
+	    
+
 compute(P,Arg,I,O,H,Qt,TV) :-
 	(P=consider;P=not_consider), !,
-	(bagof((Arg,Ms),G^bagof((T,O,true),(G =.. [P,I,O,T|Arg], call(G), T=<Qt),Ms),Ls) ->
+	(bagof((Arg,Ms),G^bagof((T,O,true),(G =.. [P,I,O,T|Arg], call(G), valid_abd(T,Qt)),Ms),Ls) ->
 	    (member((Arg,Ms),Ls),most_recent(Ms,H,O,TV));	    
 	    (H=0, TV=false)
 	).
