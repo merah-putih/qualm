@@ -714,6 +714,7 @@ latest_time([_|Hs],Tmp,Max) :-
   
 latest(Ls,T) :-
 	latest_time(Ls,T),
+	(var(T) -> qt(T); true), 
 	not_overridden(Ls,T).
 
 
