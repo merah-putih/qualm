@@ -642,7 +642,8 @@ unify_time_abds([P|Ps],H) :- !,
 	unify_time_abd(P,H),
 	unify_time_abds(Ps,H).
 
-unify_time_abd(A,H) :-
+unify_time_abd(Abd,H) :-
+	(Abd = not(LAbd) -> A = LAbd; A = Abd),
 	A =.. [_,T|_],
 	(var(T) -> T=H;
 	    true

@@ -289,7 +289,7 @@ processClauses :-
 	%process_FailRules,
 	process_Facts,
 	tellXFile("tab"),
-	writeTableDecls,
+	writeTableDecls, nl,
 	process_Rules,
 	told,
 	process_AssertedRules.
@@ -542,7 +542,7 @@ extract_abds([(consider,[A],T)|Bs],PI*NI,AO,NA) :- !,
 extract_abds([(not consider,[A],T)|Bs],PI*NI,AO,NA) :- !,
 	A =.. [AbdL|AbdArg],
 	TimedA =.. [AbdL,T|AbdArg],	
-	insertElem(TimedA,NI,NO), 
+	insertElem(not TimedA,NI,NO), 
 	extract_abds(Bs,PI*NO,AO,NA).
 extract_abds([B|Bs],AI,AO,[B|Cs]) :-
 	extract_abds(Bs,AI,AO,Cs).
@@ -557,7 +557,7 @@ process_tab_rule(H,LAbds,[]) :- !,
 	H =.. [Name|Args],
 	ruleNames(Name,N_ab,_,_),
 	ProH =.. [N_ab,LAbds,1|Args],
-	write(ProH), writeln('.').
+	write(ProH), writeln('.'),nl.
 %	writeL([ProH, '.']).
 	%my_incr_assert(ProH).	
 
@@ -578,7 +578,7 @@ process_tab_rule(H,LAbds,B) :-
 	ProH =.. [N_ab,E,TS|Args],
 	processBodyPos(B,[],Latest,ProB,LAbds,E,TS),
 	write(ProH), write(' :- '), writeq(ProB), write(', '),
-	writeq(Latest), writeln('.'). 
+	writeq(Latest), writeln('.'),nl. 
 %	writeL([ProH, ' :- ', ProB, ', ', Latest, '.']).
 %	my_incr_assert((ProH :- ProB,Latest)).
 
