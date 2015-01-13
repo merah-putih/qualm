@@ -1,14 +1,13 @@
-:- table forest_fire_ab / 2 as incremental.
-:- table lightning_ab / 2 as incremental.
-:- table leaves_on_ground_ab / 2 as incremental.
+:- table p_ab / 2 as incremental.
+:- table q_ab / 2 as incremental.
+:- table r_ab / 2 as incremental.
+:- table s_ab / 2 as incremental.
 
-forest_fire_ab(_h9248,_h9246) :- (fluent('#(r)',[forest_fire,'[consider(barbecue),dry_leaves]'],[barbecue(_h9134)] * [],_h9266,_h9122)  ','  fluent(dry_leaves,[],_h9266,_h9248,_h9144)), latest([(dry_leaves  ','  []  ','  _h9266  ','  _h9248  ','  _h9144),('#(r)'  ','  [forest_fire,'[consider(barbecue),dry_leaves]']  ','  [barbecue(_h9134)] * []  ','  _h9266  ','  _h9122)],_h9246).
+p_ab(_h6855,_h6853) :- (consider([] * [],_h6879,_h6826,a)  ','  fluent('#(r)',[p,'[consider(a)]'],_h6879,_h6855,_h6814)), latest([('#(r)'  ','  [p,'[consider(a)]']  ','  _h6879  ','  _h6855  ','  _h6814),(consider  ','  [a]  ','  [] * []  ','  _h6879  ','  _h6826)],_h6853).
 
-forest_fire_ab(_h9350,_h9348) :- (fluent('#(r)',[forest_fire,'[not(consider(barbecue)),lightning,dry_leaves,leaves_on_ground]'],[] * [not barbecue(_h9186)],_h9368,_h9172)  ','  fluent(lightning,[],_h9368,_h9391,_h9196)  ','  fluent(dry_leaves,[],_h9391,_h9414,_h9204)  ','  fluent(leaves_on_ground,[],_h9414,_h9350,_h9212)), latest([(leaves_on_ground  ','  []  ','  _h9414  ','  _h9350  ','  _h9212),(dry_leaves  ','  []  ','  _h9391  ','  _h9414  ','  _h9204),(lightning  ','  []  ','  _h9368  ','  _h9391  ','  _h9196),('#(r)'  ','  [forest_fire,'[not(consider(barbecue)),lightning,dry_leaves,leaves_on_ground]']  ','  [] * [not barbecue(_h9186)]  ','  _h9368  ','  _h9172)],_h9348).
+q_ab(_h7207,_h7205) :- (consider([] * [],_h7231,_h7176,b)  ','  fluent('#(r)',[q,'[p,consider(b)]'],_h7231,_h7259,_h7156)  ','  fluent(p,[],_h7259,_h7207,_h7168)), latest([(p  ','  []  ','  _h7259  ','  _h7207  ','  _h7168),('#(r)'  ','  [q,'[p,consider(b)]']  ','  _h7231  ','  _h7259  ','  _h7156),(consider  ','  [b]  ','  [] * []  ','  _h7231  ','  _h7176)],_h7205).
 
-lightning_ab(_h9836,_h9834) :- (fluent('#(r)',[lightning,'[not(make_not(lightning)),consider(storm)]'],[storm(_h9756)] * [],_h9854,_h9732)  ','  fluent(not_make_not,[lightning],_h9854,_h9836,_h9746)), latest([(not_make_not  ','  [lightning]  ','  _h9854  ','  _h9836  ','  _h9746),('#(r)'  ','  [lightning,'[not(make_not(lightning)),consider(storm)]']  ','  [storm(_h9756)] * []  ','  _h9854  ','  _h9732)],_h9834).
+r_ab(_h7570,_h7568) :- (fluent('#(r)',[r,'[q,p]'],[] * [],_h7591,_h7531)  ','  fluent(q,[],_h7591,_h7614,_h7543)  ','  fluent(p,[],_h7614,_h7570,_h7551)), latest([(p  ','  []  ','  _h7614  ','  _h7570  ','  _h7551),(q  ','  []  ','  _h7591  ','  _h7614  ','  _h7543),('#(r)'  ','  [r,'[q,p]']  ','  [] * []  ','  _h7591  ','  _h7531)],_h7568).
 
-lightning_ab(_h10062,_h10060) :- (fluent('#(r)',[lightning,'[make(lightning)]'],[] * [],_h10080,_h9786)  ','  fluent(make,[lightning],_h10080,_h10062,_h9798)), latest([(make  ','  [lightning]  ','  _h10080  ','  _h10062  ','  _h9798),('#(r)'  ','  [lightning,'[make(lightning)]']  ','  [] * []  ','  _h10080  ','  _h9786)],_h10060).
-
-leaves_on_ground_ab(_h10446,_h10444) :- fluent('#(r)',[leaves_on_ground,'[consider(storm)]'],[storm(_h10410)] * [],_h10446,_h10398), latest([('#(r)'  ','  [leaves_on_ground,'[consider(storm)]']  ','  [storm(_h10410)] * []  ','  _h10446  ','  _h10398)],_h10444).
+s_ab(_h7915,_h7913) :- (fluent('#(r)',[s,'[t]'],[] * [],_h7936,_h7886)  ','  fluent(t,[],_h7936,_h7915,_h7898)), latest([(t  ','  []  ','  _h7936  ','  _h7915  ','  _h7898),('#(r)'  ','  [s,'[t]']  ','  [] * []  ','  _h7936  ','  _h7886)],_h7913).
 

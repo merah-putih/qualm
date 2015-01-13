@@ -2,3 +2,4 @@ abds([a / 0,b / 0]).
 p <- consider(a).
 q <- p,consider(b).
 r <- q,p.
+s <- t.
