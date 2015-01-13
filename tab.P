@@ -1,2 +1,2 @@
 :- table p_ab / 2 as incremental.
-p_ab(_h3518,_h3481) :- '#(r)'([a] * [],_h3518,_h3481,p,'[consider(a)]').
+p_ab(_h3529,_h3527) :- fluent('#(r)',[p,'[consider(a)]'],[a(_h3493)] * [],_h3529,_h3481), latest([('#(r)'  ','  [p,'[consider(a)]']  ','  [a(_h3493)] * []  ','  _h3529  ','  _h3481)],_h3527).

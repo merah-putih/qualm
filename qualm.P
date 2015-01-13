@@ -595,11 +595,35 @@ same_str([X1|Xs1]*[X2|Xs2],[Y1|Ys1]*[Y2|Ys2]) :-
 	same_str(Xs1*Xs2,Ys1*Ys2).
 
 %%%%
-
+/*
 most_recent([(H,O,TV)],H,O,TV).
 most_recent([A,B|Ls],H,O,TV) :-
 	maxi_true(A,B,(H_,O_,TV_)),
 	most_recent([(H_,O_,TV_)|Ls],H,O,TV).
+*/
+
+timed_abds(Ps*Ns,H) :-
+	unify_time_abds(Ps,H),
+	unify_time_abds(Ns,H).
+
+unify_time_abds([],_) :- !.
+unify_time_abds([P|Ps],H) :- !,
+	unify_time_abd(P,H),
+	unify_time_abds(Ps,H).
+
+unify_time_abd(A,H) :-
+	A =.. [_,T|_],
+	(var(T) -> T=H;
+	    true
+	).
+
+most_recent([(H,O,TV)],H,O,TV) :-
+	timed_abds(O,H).
+
+most_recent([A,B|Ls],H,O,TV) :-
+	maxi_true(A,B,(H_,O_,TV_)),
+	most_recent([(H_,O_,TV_)|Ls],H,O,TV).
+
 
 maxi_true((T1,O1,true),(_,_,undefined),(T1,O1,true)) :- !.
 maxi_true((_,_,undefined),(T2,O2,true),(T2,O2,true)) :- !.

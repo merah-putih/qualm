@@ -534,11 +534,15 @@ index_rules(_,_,[]).
 extract_abds(B,L_Abds,L_NAbds) :- extract_abds(B,[]*[],L_Abds,L_NAbds).
 
 extract_abds([],A,A,[]).
-extract_abds([(consider,[A],_)|Bs],PI*NI,AO,NA) :- !,
-	insertElem(A,PI,PO), 
+extract_abds([(consider,[A],T)|Bs],PI*NI,AO,NA) :- !,
+	A =.. [AbdL|AbdArg],
+	TimedA =.. [AbdL,T|AbdArg],	
+	insertElem(TimedA,PI,PO), 
 	extract_abds(Bs,PO*NI,AO,NA).
-extract_abds([(not consider,[A],_)|Bs],PI*NI,AO,NA) :- !,
-	insertElem(A,NI,NO), 
+extract_abds([(not consider,[A],T)|Bs],PI*NI,AO,NA) :- !,
+	A =.. [AbdL|AbdArg],
+	TimedA =.. [AbdL,T|AbdArg],	
+	insertElem(TimedA,NI,NO), 
 	extract_abds(Bs,PI*NO,AO,NA).
 extract_abds([B|Bs],AI,AO,[B|Cs]) :-
 	extract_abds(Bs,AI,AO,Cs).
@@ -557,6 +561,7 @@ process_tab_rule(H,LAbds,[]) :- !,
 %	writeL([ProH, '.']).
 	%my_incr_assert(ProH).	
 
+/*
 process_tab_rule(H,LAbds,[('#(r)',RuleName,TS)]) :- !, 
 	H =.. [Name|Args],
 	ruleNames(Name,N_ab,_,_),
@@ -565,6 +570,7 @@ process_tab_rule(H,LAbds,[('#(r)',RuleName,TS)]) :- !,
 	write(ProH), write(' :- '), writeq(ProB), writeln('.').
 %	writeL([ProH, ' :- ', ProB, '.']).
 %	my_incr_assert((ProH :- ProB)).
+*/
 
 process_tab_rule(H,LAbds,B) :-
 	H =.. [Name|Args],
