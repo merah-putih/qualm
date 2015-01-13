@@ -650,8 +650,11 @@ fluent(FlName,Arg,I,O,Ht) :-
 latest_time(Hs,Max) :-
   latest_time(Hs,0,Max).
 
+%latest_time([],Tmp,Max) :-
+%	(Tmp = 0 -> qt(Max);
+%	 Max=Tmp).
 latest_time([],Tmp,Max) :-
-	(Tmp = 0 -> qt(Max);
+	(Tmp = 0 -> true;
 	 Max=Tmp).
 latest_time([H|Hs],Tmp,Max) :-
 	var(H), !,
@@ -681,9 +684,22 @@ latest(Ls,T) :-
 	not_overridden(Ls,T).
 
 
+/*
 verify_lits(Ls,T) :-
 	(var(T) -> qt(T); true),
 	test_lits(Ls,T).
+*/
+
+verify_lits(Ls,T) :-
+	(var(T) ->
+	    (latest_time(Ls,Ts),
+		(var(Ts) -> qt(T);
+		    T=Ts
+		)
+	    );
+	    true),
+	test_lits(Ls,T).
+
 
 test_lits([],_).
 test_lits([L|Ls],T) :-
@@ -701,6 +717,9 @@ test_lits([(P,Arg,I,O,H)|Ls],T) :-
 	test_lits(Ls,T).
 
 not_overridden([],_).
+not_overridden([L|Ls],T) :-
+	var(L), !,
+	not_overridden(Ls,T).
 not_overridden([(P,Arg,I,O,H)|Ls],T) :- !,
 	not_overridden(P,Arg,I,O,H,T),
 	not_overridden(Ls,T).
