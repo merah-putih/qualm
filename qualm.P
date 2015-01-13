@@ -585,7 +585,7 @@ unique([Z|Zs],Vs,Ys) :-
 	unique(Zs,[Z|Vs],Ys).
 
 member_max((T1,O1,TV1),[(T2,O2,TV2)|Vs],[(T3,O3,TV3)|Vs]) :-
-	same_str(T1,O1,T2,O2), !,
+	same_str(O1,O2), !,
 	maxi_true((T1,O1,TV1),(T2,O2,TV2),(T3,O3,TV3)).
 member_max(Z,[V|Vs],[V|Ws]) :-
 	member_max(Z,Vs,Ws).

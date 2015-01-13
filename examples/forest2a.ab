@@ -1,0 +1,14 @@
+% another variant of forest.ab by having two abductive causes for fire: storm or barbecue
+
+abds([barbecue/0,storm/0]).
+
+intv([lightning/0]).
+
+forest_fire <- barbecue, dry_leaves.
+forest_fire <- not barbecue, lightning, dry_leaves, leaves_on_ground.
+
+lightning <- storm.
+leaves_on_ground <- storm.
+
+dry_leaves.
+
