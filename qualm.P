@@ -565,18 +565,19 @@ subset(P1*N1,P2*N2) :-
 
 %%%%
 
-/*
+
 most_recent(Ls,H,O,TV) :-
 	unique(Ls,Ms),
-	member((H,O,TV),Ms).
-*/
+	member((H,O,TV),Ms),
+	timed_abds(O,H).
+
 
 %%%%
 
 unique([X|Xs],Ys) :-
 	unique(Xs,[X],Ys).
 
-unique([],Ys,Ys).
+unique([],Ys,Ys). 
 unique([Z|Zs],Vs,Ys) :-
 	member_max(Z,Vs,Ws), !,
 	unique(Zs,Ws,Ys).
@@ -584,10 +585,13 @@ unique([Z|Zs],Vs,Ys) :-
 	unique(Zs,[Z|Vs],Ys).
 
 member_max((T1,O1,TV1),[(T2,O2,TV2)|Vs],[(T3,O3,TV3)|Vs]) :-
-	same_str(O1,O2), !,
+	same_str(T1,O1,T2,O2), !,
 	maxi_true((T1,O1,TV1),(T2,O2,TV2),(T3,O3,TV3)).
 member_max(Z,[V|Vs],[V|Ws]) :-
 	member_max(Z,Vs,Ws).
+
+
+
 
 same_str([]*[],[]*[]).
 same_str([]*[X|Xs],[]*[Y|Ys]) :-
@@ -599,6 +603,27 @@ same_str([X|Xs]*[],[Y|Ys]*[]) :-
 same_str([X1|Xs1]*[X2|Xs2],[Y1|Ys1]*[Y2|Ys2]) :-
 	X1 @= Y1, X2 @= Y2,
 	same_str(Xs1*Xs2,Ys1*Ys2).
+
+/*
+same_str(_,[]*[],_,[]*[]).
+same_str(T1,[]*[X|Xs],T2,[]*[Y|Ys]) :-
+	unify_time_abd(X,T1),
+	unify_time_abd(Y,T2),
+	X @= Y,
+	same_str([]*Xs,[]*Ys).
+same_str(T1,[X|Xs]*[],T2,[Y|Ys]*[]) :-
+	unify_time_abd(X,T1),
+	unify_time_abd(Y,T2),
+	X @= Y,
+	same_str(Xs*[],Ys*[]).
+same_str(T1,[X1|Xs1]*[X2|Xs2],T2,[Y1|Ys1]*[Y2|Ys2]) :-
+	unify_time_abd(X1,T1),	
+	unify_time_abd(X2,T1),
+	unify_time_abd(Y1,T2),
+	unify_time_abd(Y2,T2),	
+	X1 @= Y1, X2 @= Y2,
+	same_str(Xs1*Xs2,Ys1*Ys2).
+*/
 
 %%%%
 /*
@@ -623,13 +648,14 @@ unify_time_abd(A,H) :-
 	    true
 	).
 
+/*
 most_recent([(H,O,TV)],H,O,TV) :-
 	timed_abds(O,H).
 
 most_recent([A,B|Ls],H,O,TV) :-
 	maxi_true(A,B,(H_,O_,TV_)),
 	most_recent([(H_,O_,TV_)|Ls],H,O,TV).
-
+*/
 
 maxi_true((T1,O1,true),(_,_,undefined),(T1,O1,true)) :- !.
 maxi_true((_,_,undefined),(T2,O2,true),(T2,O2,true)) :- !.
