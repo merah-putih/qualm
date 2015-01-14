@@ -490,7 +490,7 @@ compute(P,Arg,I,O,H,Qt,TV) :-
 	).
 */
 
-valid_abd(T,Qt) :-
+valid_time(T,Qt) :-
 	(var(T) -> T=Qt;
 	    T=<Qt
 	).
@@ -498,7 +498,7 @@ valid_abd(T,Qt) :-
 
 compute(P,Arg,I,O,H,Qt,TV) :-
 	(P=consider;P=not_consider), !,
-	(bagof((Arg,Ms),G^bagof((T,O,true),(G =.. [P,I,O,T|Arg], call(G), valid_abd(T,Qt)),Ms),Ls) ->
+	(bagof((Arg,Ms),G^bagof((T,O,true),(G =.. [P,I,O,T|Arg], call(G), valid_time(T,Qt)),Ms),Ls) ->
 	    (member((Arg,Ms),Ls),most_recent(Ms,H,O,TV));	    
 	    (H=0, TV=false)
 	).
@@ -689,6 +689,7 @@ latest_time(Hs,Max) :-
 latest_time([],Tmp,Max) :-
 	(Tmp = 0 -> true;
 	 Max=Tmp).
+%latest_time([],Max,Max).
 latest_time([H|Hs],Tmp,Max) :-
 	var(H), !,
 	H = Max,
@@ -714,14 +715,15 @@ latest_time([_|Hs],Tmp,Max) :-
   
 latest(Ls,T) :-
 	latest_time(Ls,T),
-	(var(T) -> qt(T); true), 
-	not_overridden(Ls,T).
+	(var(T) -> qt(Ts); Ts=T), 
+	not_overridden(Ls,Ts).
 
 
 /*
 verify_lits(Ls,T) :-
-	(var(T) -> qt(T); true),
-	test_lits(Ls,T).
+	(var(T) -> true;
+	    test_lits(Ls,T)
+	).
 */
 
 verify_lits(Ls,T) :-
@@ -750,9 +752,14 @@ test_lits([(P,Arg,I,O,H)|Ls],T) :-
 	not_overridden(P,Arg,I,O,H,T),
 	test_lits(Ls,T).
 
+%not_overridden(_,T) :-
+%	var(T), !.
 not_overridden([],_).
 not_overridden([L|Ls],T) :-
 	var(L), !,
+	not_overridden(Ls,T).
+not_overridden([(_,_,_,_,H)|Ls],T) :-
+	var(H), !,
 	not_overridden(Ls,T).
 not_overridden([(P,Arg,I,O,H)|Ls],T) :- !,
 	not_overridden(P,Arg,I,O,H,T),
@@ -776,7 +783,7 @@ overridden(F,A,I,O,T,Up) :-
 	 fluent(F,A,I,O,H);
 	 (Pred =.. [F,I,O,H|A], call(Pred))
 	),
-	H =< Up, H > T.
+        H =< Up, H > T.
 
 
 
