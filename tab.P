@@ -1,14 +1,47 @@
-:- table forest_fire_ab / 2 as incremental.
-:- table lightning_ab / 2 as incremental.
-:- table leaves_on_ground_ab / 2 as incremental.
+:- table run_sidetrack_ab / 4 as incremental.
+:- table hit_ab / 5 as incremental.
+:- table save_from_ab / 3 as incremental.
+:- table on_sidetrack_ab / 4 as incremental.
+:- table sidetrack_ab / 3 as incremental.
+:- table full_sight_ab / 2 as incremental.
+:- table partial_sight_ab / 2 as incremental.
+:- table on_sidetrack_ab / 3 as incremental.
+:- table heavy_enough_ab / 3 as incremental.
+:- table threshold_ab / 3 as incremental.
+:- table maxi_ab / 3 as incremental.
+:- table hit_ab / 4 as incremental.
 
-forest_fire_ab(_h10127,_h10125) :- (consider([] * [],_h10151,_h10020,barbecue)  ','  fluent('#(r)',[forest_fire,'[consider(barbecue),dry_leaves]'],_h10151,_h10179,_h10008)  ','  fluent(dry_leaves,[],_h10179,_h10127,_h10030)), latest([(dry_leaves  ','  []  ','  _h10179  ','  _h10127  ','  _h10030),('#(r)'  ','  [forest_fire,'[consider(barbecue),dry_leaves]']  ','  _h10151  ','  _h10179  ','  _h10008),(consider  ','  [barbecue]  ','  [] * []  ','  _h10151  ','  _h10020)],_h10125).
+run_sidetrack_ab(_h31381,_h31379,_h31293,_h31294) :- (consider([] * [],_h31407,_h31343,divert(_h31293,_h31294)),fluent('#(r)',['run_sidetrack(_h0,_h1)','[sidetrack(_h0),consider(divert(_h1,_h0))]'],_h31407,_h31435,_h31321),fluent(sidetrack,[_h31294],_h31435,_h31381,_h31333)), latest([(sidetrack,[_h31294],_h31435,_h31381,_h31333),('#(r)',['run_sidetrack(_h0,_h1)','[sidetrack(_h0),consider(divert(_h1,_h0))]'],_h31407,_h31435,_h31321),(consider,[divert(_h31293,_h31294)],[] * [],_h31407,_h31343)],_h31379).
 
-forest_fire_ab(_h10256,_h10254) :- (not_consider([] * [],_h10280,_h10072,barbecue)  ','  fluent('#(r)',[forest_fire,'[not(consider(barbecue)),lightning,dry_leaves,leaves_on_ground]'],_h10280,_h10308,_h10058)  ','  fluent(lightning,[],_h10308,_h10331,_h10082)  ','  fluent(dry_leaves,[],_h10331,_h10354,_h10090)  ','  fluent(leaves_on_ground,[],_h10354,_h10256,_h10098)), latest([(leaves_on_ground  ','  []  ','  _h10354  ','  _h10256  ','  _h10098),(dry_leaves  ','  []  ','  _h10331  ','  _h10354  ','  _h10090),(lightning  ','  []  ','  _h10308  ','  _h10331  ','  _h10082),('#(r)'  ','  [forest_fire,'[not(consider(barbecue)),lightning,dry_leaves,leaves_on_ground]']  ','  _h10280  ','  _h10308  ','  _h10058),(not_consider  ','  [barbecue]  ','  [] * []  ','  _h10280  ','  _h10072)],_h10254).
+hit_ab(_h31819,_h31817,_h31736,_h31737,_h31738) :- (fluent('#(r)',['hit(_h0,_h1,_h2)','[run_sidetrack(_h0,_h1),on_sidetrack(_h2,_h1)]'],[] * [],_h31843,_h31766),fluent(run_sidetrack,[_h31736,_h31738],_h31843,_h31866,_h31778),fluent(on_sidetrack,[_h31737,_h31738],_h31866,_h31819,_h31790)), latest([(on_sidetrack,[_h31737,_h31738],_h31866,_h31819,_h31790),(run_sidetrack,[_h31736,_h31738],_h31843,_h31866,_h31778),('#(r)',['hit(_h0,_h1,_h2)','[run_sidetrack(_h0,_h1),on_sidetrack(_h2,_h1)]'],[] * [],_h31843,_h31766)],_h31817).
 
-lightning_ab(_h10769,_h10767) :- (consider([] * [],_h10793,_h10696,storm)  ','  fluent('#(r)',[lightning,'[not(make_not(lightning)),consider(storm)]'],_h10793,_h10821,_h10672)  ','  fluent(not_make_not,[lightning],_h10821,_h10769,_h10686)), latest([(not_make_not  ','  [lightning]  ','  _h10821  ','  _h10769  ','  _h10686),('#(r)'  ','  [lightning,'[not(make_not(lightning)),consider(storm)]']  ','  _h10793  ','  _h10821  ','  _h10672),(consider  ','  [storm]  ','  [] * []  ','  _h10793  ','  _h10696)],_h10767).
+save_from_ab(_h32332,_h32330,_h32191) :- (fluent('#(r)',['save_from(_h0)','[run_sidetrack(_h0,straight),sidetrack(straight)]'],[] * [],_h32354,_h32217),fluent(run_sidetrack,[_h32191,straight],_h32354,_h32377,_h32229),fluent(sidetrack,[straight],_h32377,_h32332,_h32241)), latest([(sidetrack,[straight],_h32377,_h32332,_h32241),(run_sidetrack,[_h32191,straight],_h32354,_h32377,_h32229),('#(r)',['save_from(_h0)','[run_sidetrack(_h0,straight),sidetrack(straight)]'],[] * [],_h32354,_h32217)],_h32330).
 
-lightning_ab(_h11026,_h11024) :- (fluent('#(r)',[lightning,'[make(lightning)]'],[] * [],_h11047,_h10726)  ','  fluent(make,[lightning],_h11047,_h11026,_h10738)), latest([(make  ','  [lightning]  ','  _h11047  ','  _h11026  ','  _h10738),('#(r)'  ','  [lightning,'[make(lightning)]']  ','  [] * []  ','  _h11047  ','  _h10726)],_h11024).
+save_from_ab(_h32442,_h32440,_h32199) :- (fluent('#(r)',['save_from(_h0)','[sidetrack(loop),hit(_h0,_h1,loop),heavy_enough(_h1)]'],[] * [],_h32464,_h32273),fluent(sidetrack,[loop],_h32464,_h32487,_h32285),fluent(hit,[_h32199,_h32298,loop],_h32487,_h32510,_h32295),fluent(heavy_enough,[_h32298],_h32510,_h32442,_h32309)), latest([(heavy_enough,[_h32298],_h32510,_h32442,_h32309),(hit,[_h32199,_h32298,loop],_h32487,_h32510,_h32295),(sidetrack,[loop],_h32464,_h32487,_h32285),('#(r)',['save_from(_h0)','[sidetrack(loop),hit(_h0,_h1,loop),heavy_enough(_h1)]'],[] * [],_h32464,_h32273)],_h32440).
 
-leaves_on_ground_ab(_h11406,_h11404) :- (consider([] * [],_h11430,_h11377,storm)  ','  fluent('#(r)',[leaves_on_ground,'[consider(storm)]'],_h11430,_h11406,_h11365)), latest([('#(r)'  ','  [leaves_on_ground,'[consider(storm)]']  ','  _h11430  ','  _h11406  ','  _h11365),(consider  ','  [storm]  ','  [] * []  ','  _h11430  ','  _h11377)],_h11404).
+on_sidetrack_ab(_h32898,_h32896,guy,_h32836) :- (fluent('#(r)',['on_sidetrack(guy,_h0)','[sidetrack(_h0)]'],[] * [],_h32921,_h32863),fluent(sidetrack,[_h32836],_h32921,_h32898,_h32875)), latest([(sidetrack,[_h32836],_h32921,_h32898,_h32875),('#(r)',['on_sidetrack(guy,_h0)','[sidetrack(_h0)]'],[] * [],_h32921,_h32863)],_h32896).
+
+sidetrack_ab(_h33321,_h33319,straight) :- (fluent('#(r)',['sidetrack(straight)','[partial_sight]'],[] * [],_h33343,_h33248),fluent(partial_sight,[],_h33343,_h33321,_h33260)), latest([(partial_sight,[],_h33343,_h33321,_h33260),('#(r)',['sidetrack(straight)','[partial_sight]'],[] * [],_h33343,_h33248)],_h33319).
+
+sidetrack_ab(_h33404,_h33402,loop) :- (fluent('#(r)',['sidetrack(loop)','[full_sight]'],[] * [],_h33426,_h33290),fluent(full_sight,[],_h33426,_h33404,_h33302)), latest([(full_sight,[],_h33426,_h33404,_h33302),('#(r)',['sidetrack(loop)','[full_sight]'],[] * [],_h33426,_h33290)],_h33402).
+
+full_sight_ab(_h33804,_h33802) :- (fluent('#(r)',[full_sight,'[not(partial_sight)]'],[] * [],_h33825,_h33773),fluent(not_partial_sight,[],_h33825,_h33804,_h33787)), latest([(not_partial_sight,[],_h33825,_h33804,_h33787),('#(r)',[full_sight,'[not(partial_sight)]'],[] * [],_h33825,_h33773)],_h33802).
+
+partial_sight_ab(_h34304,_h34302) :- (fluent('#(r)',[partial_sight,'[foggy]'],[] * [],_h34325,_h34275),fluent(foggy,[],_h34325,_h34304,_h34287)), latest([(foggy,[],_h34325,_h34304,_h34287),('#(r)',[partial_sight,'[foggy]'],[] * [],_h34325,_h34275)],_h34302).
+
+on_sidetrack_ab(_h34704,_h34702,_h34575) :- (consider([] * [],_h34729,_h34613,push(_h34575)),fluent('#(r)',['on_sidetrack(_h0)','[consider(push(_h0))]'],_h34729,_h34704,_h34601)), latest([('#(r)',['on_sidetrack(_h0)','[consider(push(_h0))]'],_h34729,_h34704,_h34601),(consider,[push(_h34575)],[] * [],_h34729,_h34613)],_h34702).
+
+on_sidetrack_ab(_h34807,_h34805,_h34583) :- (consider([] * [],_h34832,_h34659,push(_h34663)),fluent('#(r)',['on_sidetrack(_h0)','[consider(push(_h0)),near(_h1,_h0)]'],_h34832,_h34860,_h34647),fluent(near,[_h34583,_h34663],_h34860,_h34807,_h34671)), latest([(near,[_h34583,_h34663],_h34860,_h34807,_h34671),('#(r)',['on_sidetrack(_h0)','[consider(push(_h0)),near(_h1,_h0)]'],_h34832,_h34860,_h34647),(consider,[push(_h34663)],[] * [],_h34832,_h34659)],_h34805).
+
+heavy_enough_ab(_h35267,_h35265,_h35185) :- (fluent('#(r)',['heavy_enough(_h0)','[weight(_h0,_h1),threshold(_h2),prolog(>(_h1,_h2))]'],[] * [],_h35289,_h35211),fluent(weight,[_h35185,_h35226],_h35289,_h35312,_h35223),fluent(threshold,[_h35236],_h35312,_h35267,_h35235),_h35226 > _h35236), latest([_h35350,(threshold,[_h35236],_h35312,_h35267,_h35235),(weight,[_h35185,_h35226],_h35289,_h35312,_h35223),('#(r)',['heavy_enough(_h0)','[weight(_h0,_h1),threshold(_h2),prolog(>(_h1,_h2))]'],[] * [],_h35289,_h35211)],_h35265).
+
+threshold_ab(_h35697,_h35695,90) :- (fluent('#(r)',['threshold(90)','[mini(_h0)]'],[] * [],_h35719,_h35620),fluent(mini,[_h35633],_h35719,_h35697,_h35632)), latest([(mini,[_h35633],_h35719,_h35697,_h35632),('#(r)',['threshold(90)','[mini(_h0)]'],[] * [],_h35719,_h35620)],_h35695).
+
+threshold_ab(_h35780,_h35778,150) :- (fluent('#(r)',['threshold(150)','[maxi(_h0)]'],[] * [],_h35802,_h35664),fluent(maxi,[_h35677],_h35802,_h35780,_h35676)), latest([(maxi,[_h35677],_h35802,_h35780,_h35676),('#(r)',['threshold(150)','[maxi(_h0)]'],[] * [],_h35802,_h35664)],_h35778).
+
+maxi_ab(_h36188,_h36186,_h36127) :- (fluent('#(r)',['maxi(_h0)','[not(mini(_h0))]'],[] * [],_h36210,_h36153),fluent(not_mini,[_h36127],_h36210,_h36188,_h36167)), latest([(not_mini,[_h36127],_h36210,_h36188,_h36167),('#(r)',['maxi(_h0)','[not(mini(_h0))]'],[] * [],_h36210,_h36153)],_h36186).
+
+hit_ab(_h36727,_h36725,_h36611,_h36612) :- (fluent('#(r)',['hit(_h0,_h1)','[not(make_not(hit(_h0,_h1)))]'],[] * [],_h36750,_h36639),fluent(not_make_not,[hit(_h36611,_h36612)],_h36750,_h36727,_h36653)), latest([(not_make_not,[hit(_h36611,_h36612)],_h36750,_h36727,_h36653),('#(r)',['hit(_h0,_h1)','[not(make_not(hit(_h0,_h1)))]'],[] * [],_h36750,_h36639)],_h36725).
+
+hit_ab(_h36961,_h36959,_h36620,_h36621) :- (fluent('#(r)',['hit(_h0,_h1)','[make(hit(_h0,_h1))]'],[] * [],_h36984,_h36689),fluent(make,[hit(_h36620,_h36621)],_h36984,_h36961,_h36701)), latest([(make,[hit(_h36620,_h36621)],_h36984,_h36961,_h36701),('#(r)',['hit(_h0,_h1)','[make(hit(_h0,_h1))]'],[] * [],_h36984,_h36689)],_h36959).
 
