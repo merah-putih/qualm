@@ -9,9 +9,6 @@ hit(X,Y,Track) <- run_sidetrack(X,Track),on_sidetrack(Y,Track).
 save_from(X) <- run_sidetrack(X,straight), sidetrack(straight).
 save_from(X) <- sidetrack(loop), hit(X,Y,loop), heavy_enough(Y).
 
-%on_sidetrack(thin_guy,_) <- partial_sight.
-%on_sidetrack(heavy_guy,_) <- full_sight.
-
 on_sidetrack(guy,Track) <- sidetrack(Track).
 
 sidetrack(straight) <- partial_sight.

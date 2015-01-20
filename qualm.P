@@ -567,11 +567,33 @@ subset(P1*N1,P2*N2) :-
 
 
 most_recent(Ls,H,O,TV) :-
-	unique(Ls,Ms),
+	unique(Ls,Ms_),
+	recent_unique(Ms_,Ms),
 	member((H,O,TV),Ms),
 	timed_abds(O,H).
 
 
+%%%%
+
+recent_unique(Ls,Ms) :-
+	recent_unique(Ls,0,[],Ms).
+
+recent_unique([],Max,Ts,Ms) :-
+	merging(Max,Ts,Ms).
+recent_unique([(T,O,TV)|Ls],Max,_,Ms) :-
+	T > Max, !,
+	recent_unique(Ls,T,[(O,TV)],Ms).
+recent_unique([(T,_,_)|Ls],Max,Ts,Ms) :-
+	T < Max, !,
+	recent_unique(Ls,Max,Ts,Ms).
+recent_unique([(_,O,TV)|Ls],Max,Ts,Ms) :-
+	recent_unique(Ls,Max,[(O,TV)|Ts],Ms).
+
+
+merging(_,[],[]).
+merging(T,[(O,TV)|Ls],[(T,O,TV)|Hs]) :-
+	merging(T,Ls,Hs).
+		     
 %%%%
 
 unique([X|Xs],Ys) :-
