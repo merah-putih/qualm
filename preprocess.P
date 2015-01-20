@@ -427,8 +427,8 @@ process_AbdRules([N/A|L]) :-
 	AbH =.. [AbAtom,I,O,H|AbArgs],
 	AbHNeg =.. [Not_AbAtom,I,O,H|AbArgs],
 	TimedAb =.. [AbAtom,H|AbArgs],
-	my_assert((AbH :- ensure_ground(Ab), insert(TimedAb,I,O))),
-	my_assert((AbHNeg :- ensure_ground(Ab), insert(not(TimedAb),I,O))),
+	my_assert((AbH :- insert(TimedAb,I,O))),
+	my_assert((AbHNeg :- insert(not(TimedAb),I,O))),
 	process_AbdRules(L).
 
 /*

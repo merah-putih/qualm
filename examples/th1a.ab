@@ -1,6 +1,6 @@
-abds([divert/2,push/1]).
+abds([divert/2,push/2]).
 
-intv([hit/2]).
+intv([hit/3]).
 
 run_sidetrack(X,Track) <- sidetrack(Track), divert(X,Track).
 
@@ -23,22 +23,22 @@ partial_sight <- foggy.
 foggy.
 
 %<- save_from(t), sidetrack(loop), person(Y), hit(t,Y).
+<- person(P), sidetrack(T), push(P,T).
 
-person(thin_guy).
-person(heavy_guy).
-person(heavier_guy).
 
-on_sidetrack(Y) <- push(Y).  
-on_sidetrack(Y) <- push(X), near(Y,X).
+person(guy).
+%person(heavier_guy).
 
-%expect(divert(_)).
-%expect(push(X)) <- available(X), divert(t).
 
-near(heavier_guy,cargo).
+
+on_sidetrack(Y,loop) <- push(Y,loop).
+on_sidetrack(Y,loop) <- push(X,loop), lean(Y,X).
+
+lean(heavier_guy,cargo).
 
 heavy_enough(X) <- weight(X,W), threshold(T), prolog(W>T).
 
-weight(heavy_guy,100).
+weight(guy,100).
 weight(cargo,200).
 weight(heavier_guy,160).
 
