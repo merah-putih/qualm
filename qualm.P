@@ -410,6 +410,11 @@ act_assert(Qt) :-
 	fail.
 act_assert(_).
 
+act_update(not('#(r)'(H,B)),Ht) :- !,
+	%collectPrefsArt(F_,_,F,Arg),
+	Fluent =.. ['not_#(r)',_,_,Ht,H,B],
+	incr_assert_inval_IfNot(Fluent).
+
 act_update(F_,Ht) :-
 	collectPrefsArt(F_,_,F,Arg),
 	Fluent =.. [F,I,I,Ht|Arg],

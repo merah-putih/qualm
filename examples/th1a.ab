@@ -1,15 +1,15 @@
-abds([divert/2,push/2]).
+abds([divert/1,push/1]).
 
-intv([hit/3]).
+intv([hit/2]).
 
-run_sidetrack(X,Track) <- sidetrack(Track), divert(X,Track).
+run_sidetrack(X) <- divert(X).
 
-hit(X,Y,Track) <- run_sidetrack(X,Track),on_sidetrack(Y,Track).
+hit(X,Y) <- run_sidetrack(X),on_sidetrack(Y).
 
-save_from(X) <- run_sidetrack(X,straight), sidetrack(straight).
-save_from(X) <- sidetrack(loop), hit(X,Y,loop), heavy_enough(Y).
+save_from(X) <- run_sidetrack(X), sidetrack(straight).
+save_from(X) <- sidetrack(loop), hit(X,Y), heavy_enough(Y).
 
-on_sidetrack(guy,Track) <- sidetrack(Track).
+on_sidetrack(guy).
 
 sidetrack(straight) <- partial_sight.
 sidetrack(loop) <- full_sight.
@@ -20,16 +20,23 @@ partial_sight <- foggy.
 foggy.
 
 %<- save_from(t), sidetrack(loop), person(Y), hit(t,Y).
-<- person(P), sidetrack(T), push(P,T).
+%<- person(P), sidetrack(T), push(P,T).
 
 
 person(guy).
-%person(heavier_guy).
+person(heavier_guy).
+
+object(X) <- person(X).
+object(X) <- inanimate(X).
+
+inanimate(cargo).
 
 
+on_bridge(cargo).
 
-on_sidetrack(Y,loop) <- push(Y,loop).
-on_sidetrack(Y,loop) <- push(X,loop), lean(Y,X).
+
+on_sidetrack(Y) <- on_bridge(Y),push(Y).
+on_sidetrack(Y) <- push(X), lean(Y,X).
 
 lean(heavier_guy,cargo).
 
