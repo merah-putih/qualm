@@ -5,114 +5,188 @@
 [tab loaded, cpu time used: 0.0010 seconds]
 
 yes
-| ?- updates([not '#(r)'('on_sidetrack(_h0)','[on_bridge(_h0),consider(push(_h0))]'),not '#(r)'('on_sidetrack(_h0)','[consider(push(_h0)),lean(_h1,_h0)]')]).
+
+% switch off the rule related to abducible 'push' for the intial scenario that only involves diverting the trolley.
+
+| ?-  updates([not '#(r)'('on_sidetrack(_h0)','[on_bridge(_h0),consider(push(_h0))]'),not '#(r)'('fall(_h0)','[not(make_not(fall(_h0))),consider(push(_h1)),lean(_h0,_h1)]')]).
 Pending update: not #(r)(on_sidetrack(_h0),[on_bridge(_h0),consider(push(_h0))]), at current time 2
-Pending update: not #(r)(on_sidetrack(_h0),[consider(push(_h0)),lean(_h1,_h0)]), at current time 2
+Pending update: not #(r)(fall(_h0),[not(make_not(fall(_h0))),consider(push(_h1)),lean(_h0,_h1)]), at current time 2
 
 yes
+
+% it is foggy (as a fact in the program):
+% how to save the five from the trolley t?
+
 | ?- query(save_from(t),O).
 
 O = [divert(1,t)] * [];
 
 no
+
+% before reasoning on counterfactual 'if trolley t had not hit the fat guy, the five would not have been saved from t', explain the factual observation
+
 | ?- query((hit(t,Obj),save_from(t)),O).
 
 Obj = guy
 O = [divert(1,t)] * [];
 
 no
+
+% fix the abduced background context, by pending update
+
 | ?- updates([(divert(t),1)]).
 Pending update: divert(t), at time 1
 
 yes
+
+% just testing that now divert(t) has been fixed (as a fact) by activating pending, i.e., nothing is abduced.
 | ?- query(save_from(t),O).
 
 O = [] * [];
 
 no
+
+% intervention by hypothetical update: 'if trolley t had not hit the fat guy'
 | ?- updates([make_not(hit(t,guy))]).
 Pending counterfactual update: not hit(t,guy), at time 1.0100
 
 yes
+
+% Would the five still have been saved from the trolley t? (Yes)
 | ?- query(save_from(t),O).
 
 O = [] * [];
 
 no
+
+% returning back to factual, by retracting hypothetical update of intervention (via not make_not(...))
 | ?- updates([not make_not(hit(t,guy))]).
 Pending cancel counterfactual update: not hit(t,guy), at time 1.0200
 
 yes
+
+% checking that save_from(t) is still true factually.
 | ?- query(save_from(t),O).
 
 O = [] * [];
 
 no
+
+% it's no longer foggy, the robot can see more clearly the situation.
 | ?- updates([not foggy]).
 Pending update: not foggy, at current time 3
 
 yes
+
+% diverting the trolley t still saves the five from t.
 | ?- query(save_from(t),O).
 
 O = [] * [];
 
 no
+
+% Explain the factual observation that the fat guy is hit by t and the five is saved from t.
 | ?- query((hit(t,Obj),save_from(t)),O).
 
 Obj = guy
 O = [] * [];
 
 no
+
+% Preparing for the intervention for the antecendent: 'if the fat guy had not been hit'
 | ?- updates([make_not(hit(t,guy))]).
 Pending counterfactual update: not hit(t,guy), at time 1.0300
 
 yes
+
+% ... the five would NOT have been saved! (hitting the fat guy is the cause for saving the five from t)
 | ?- query(save_from(t),O).
 
 no
+
+% return to the factual situation.
 | ?- updates([not make_not(hit(t,guy))]).
 Pending cancel counterfactual update: not hit(t,guy), at time 1.0400
 
 yes
+
+% factually, the five is still saved from t.
 | ?- query(save_from(t),O).
 
 O = [] * [];
 
 no
+
+% oh no, the guy himself won't be enough to stop the trolley!
 | ?- updates([not mini(t)]).
 Pending update: not mini(t), at current time 4
 
 yes
 
+% as expected, the five won't be saved from t
 | ?-  query(save_from(t),O).
 
 no
-| ?- updates(['#(r)'('on_sidetrack(_h0)','[on_bridge(_h0),consider(push(_h0))]'),'#(r)'('on_sidetrack(_h0)','[consider(push(_h0)),lean(_h1,_h0)]')]).
-Pending update: #(r)(on_sidetrack(_h0),[on_bridge(_h0),consider(push(_h0))]), at current time 5
-Pending update: #(r)(on_sidetrack(_h0),[consider(push(_h0)),lean(_h1,_h0)]), at current time 5
 
-yes
+% but the robot has some rules regarding pushing action (abducible push/1), switching on these rules now.
+| ?-  updates(['#(r)'('on_sidetrack(_h0)','[on_bridge(_h0),consider(push(_h0))]'),'#(r)'('fall(_h0)','[not(make_not(fall(_h0))),consider(push(_h1)),lean(_h0,_h1)]')]).
+Pending update: #(r)(on_sidetrack(_h0),[on_bridge(_h0),consider(push(_h0))]), at current time 5
+Pending update: #(r)(fall(_h0),[not(make_not(fall(_h0))),consider(push(_h1)),lean(_h0,_h1)]), at current time 5
+
+% the robot knows that the five can still be saved from t, by pushing the existing cargo on the bridge over the looping track
 | ?-  query(save_from(t),O).
 
 O = [push(5,cargo)] * [];
 
 no
 
-| ?- query((divert(t),hit(t,P),person(P)),O).
-
-P = guy
-O = [] * [];
+% is there a person falling from the bridge in order to save the five from t?
+| ?- query((fall(P),save_from(t),person(P)),O).
 
 P = heavier_guy
 O = [push(5,cargo)] * [];
 
 no
 
-| ?- query((hit(t,heavier_guy),save_from(t)),O).
+% before checking whether the unfortunate event of guy died by falling is the cause for saving the five from t, fix the abduced background context.
+| ?- updates([(push(cargo),5)]).
+Pending update: push(cargo), at time 5
 
-O = [push(5,cargo)] * [];
+yes
+
+% save_from(t) without abducing (push(cargo) is now a fact).
+| ?- query(save_from(t),O).
+
+O = [] * [];
 
 no
+
+% if the heavier guy had not been killed by falling from the bridge, ...
+| ?- updates([make_not(fall(heavier_guy))]).
+Pending counterfactual update: not fall(heavier_guy), at time 5.0100
+
+yes
+
+% the five would still have been saved!
+| ?- query(save_from(t),O).
+
+O = [] * [];
+
+no
+
+% returning to factual situation
+| ?- updates([not make_not(fall(heavier_guy))]).
+Pending cancel counterfactual update: not fall(heavier_guy), at time 5.0200
+
+yes
+
+% where the five is still saved from t
+| ?- query(save_from(t),O).
+
+O = [] * [];
+
+no
+
 
 | ?- 
 
