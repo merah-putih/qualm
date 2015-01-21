@@ -794,6 +794,9 @@ not_overridden([(P,Arg,I,O,H)|Ls],T) :- !,
 not_overridden([_|Ls],T) :-
 	not_overridden(Ls,T).
 
+
+not_overridden(prolog,_,_,_,_,_) :- !.
+
 not_overridden(Pred,Arg,In,Out,T,MaxT) :-
 	atom_compl(Pred,Pred_),
 	\+ overridden(Pred_,Arg,In,Out,T,MaxT).

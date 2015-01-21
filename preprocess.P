@@ -238,8 +238,10 @@ addToFluents(Pref,Art,Fs) :-
 
 loadBody((true,B),NA) :- !,
 	loadBody(B,NA).
-loadBody((prolog(P),B),[prolog(P)|NA]) :- !,
+loadBody((prolog(P),B),[(prolog(P),_,_)|NA]) :- !,
 	loadBody(B,NA).
+%loadBody((prolog(P),B),[prolog(P)|NA]) :- !,
+%	loadBody(B,NA).
 loadBody(((not A),B),[(not PrefA,Args,_)|Rs]) :- !,
 	assertInBody(A),
 	addToFluents(A,PrefA,_,Args), 
@@ -249,7 +251,8 @@ loadBody((A,B),[(PrefA,Args,_)|Rs]) :- !,
 	addToFluents(A,PrefA,_,Args), 
 	loadBody(B,Rs).
 loadBody(true,[]) :- !.
-loadBody(prolog(P),[prolog(P)]) :- !.
+%loadBody(prolog(P),[prolog(P)]) :- !.
+loadBody(prolog(P),[(prolog(P),_,_)]) :- !.
 loadBody((not A),[(not PrefA,Args,_)]) :- !,
 	assertInBody(A),
 	addToFluents(A,PrefA,_,Args).

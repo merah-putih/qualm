@@ -94,8 +94,11 @@ processBodyLatest((P,Arg,TS),(P,Arg,I,O,TS),ProA,I,O) :-
 	processAtom(P,Arg,I,O,TS,ProA).
 */
 
-processBodyLatest(not(prolog(P)),_,not(P),I,I) :- !.
-processBodyLatest(prolog(P),_,P,I,I) :- !.
+%the two lines comment related to change in loadBody/2 for prolog.
+%processBodyLatest(not(prolog(P)),_,not(P),I,I) :- !. 
+%processBodyLatest(prolog(P),_,P,I,I) :- !.
+processBodyLatest((not(prolog(P)),_,_),(prolog,_,I,I,_),not(P),I,I) :- !.
+processBodyLatest((prolog(P),_,_),(prolog,_,I,I,_),P,I,I) :- !.
 processBodyLatest((not(consider),Arg,TS),(not_consider,Arg,I,O,TS),ProB,I,O) :- !,
 	processAtom(not_consider,Arg,I,O,TS,ProB).	
 processBodyLatest((consider,Arg,TS),(consider,Arg,I,O,TS),ProB,I,O) :- !,

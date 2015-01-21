@@ -1,0 +1,119 @@
+| ?- consultQ("examples/th1a").
+
+[Compiling ./tab]
+[tab compiled, cpu time used: 0.0380 seconds]
+[tab loaded, cpu time used: 0.0010 seconds]
+
+yes
+| ?- updates([not '#(r)'('on_sidetrack(_h0)','[on_bridge(_h0),consider(push(_h0))]'),not '#(r)'('on_sidetrack(_h0)','[consider(push(_h0)),lean(_h1,_h0)]')]).
+Pending update: not #(r)(on_sidetrack(_h0),[on_bridge(_h0),consider(push(_h0))]), at current time 2
+Pending update: not #(r)(on_sidetrack(_h0),[consider(push(_h0)),lean(_h1,_h0)]), at current time 2
+
+yes
+| ?- query(save_from(t),O).
+
+O = [divert(1,t)] * [];
+
+no
+| ?- query((hit(t,Obj),save_from(t)),O).
+
+Obj = guy
+O = [divert(1,t)] * [];
+
+no
+| ?- updates([(divert(t),1)]).
+Pending update: divert(t), at time 1
+
+yes
+| ?- query(save_from(t),O).
+
+O = [] * [];
+
+no
+| ?- updates([make_not(hit(t,guy))]).
+Pending counterfactual update: not hit(t,guy), at time 1.0100
+
+yes
+| ?- query(save_from(t),O).
+
+O = [] * [];
+
+no
+| ?- updates([not make_not(hit(t,guy))]).
+Pending cancel counterfactual update: not hit(t,guy), at time 1.0200
+
+yes
+| ?- query(save_from(t),O).
+
+O = [] * [];
+
+no
+| ?- updates([not foggy]).
+Pending update: not foggy, at current time 3
+
+yes
+| ?- query(save_from(t),O).
+
+O = [] * [];
+
+no
+| ?- query((hit(t,Obj),save_from(t)),O).
+
+Obj = guy
+O = [] * [];
+
+no
+| ?- updates([make_not(hit(t,guy))]).
+Pending counterfactual update: not hit(t,guy), at time 1.0300
+
+yes
+| ?- query(save_from(t),O).
+
+no
+| ?- updates([not make_not(hit(t,guy))]).
+Pending cancel counterfactual update: not hit(t,guy), at time 1.0400
+
+yes
+| ?- query(save_from(t),O).
+
+O = [] * [];
+
+no
+| ?- updates([not mini(t)]).
+Pending update: not mini(t), at current time 4
+
+yes
+
+| ?-  query(save_from(t),O).
+
+no
+| ?- updates(['#(r)'('on_sidetrack(_h0)','[on_bridge(_h0),consider(push(_h0))]'),'#(r)'('on_sidetrack(_h0)','[consider(push(_h0)),lean(_h1,_h0)]')]).
+Pending update: #(r)(on_sidetrack(_h0),[on_bridge(_h0),consider(push(_h0))]), at current time 5
+Pending update: #(r)(on_sidetrack(_h0),[consider(push(_h0)),lean(_h1,_h0)]), at current time 5
+
+yes
+| ?-  query(save_from(t),O).
+
+O = [push(5,cargo)] * [];
+
+no
+
+| ?- query((divert(t),hit(t,P),person(P)),O).
+
+P = guy
+O = [] * [];
+
+P = heavier_guy
+O = [push(5,cargo)] * [];
+
+no
+
+| ?- query((hit(t,heavier_guy),save_from(t)),O).
+
+O = [push(5,cargo)] * [];
+
+no
+
+| ?- 
+
+
