@@ -103,9 +103,11 @@ processBodyLatest((not(consider),Arg,TS),(not_consider,Arg,I,O,TS),ProB,I,O) :- 
 	processAtom(not_consider,Arg,I,O,TS,ProB).	
 processBodyLatest((consider,Arg,TS),(consider,Arg,I,O,TS),ProB,I,O) :- !,
 	processAtom(consider,Arg,I,O,TS,ProB).	
-processBodyLatest((not(P),Arg,TS),(Not_P,Arg,I,O,TS),fluent(Not_P,Arg,I,O,TS),I,O) :- !,
-	renamePred("not_",P,[],Not_P).
-processBodyLatest((P,Arg,TS),(P,Arg,I,O,TS),fluent(P,Arg,I,O,TS),I,O).
+processBodyLatest((not(P),Arg,TS),(Not_P,Arg,I,O,TS),ProB,I,O) :- !,
+	renamePred("not_",P,[],Not_P),
+	processAtom(Not_P,Arg,I,O,TS,ProB).
+processBodyLatest((P,Arg,TS),(P,Arg,I,O,TS),ProB,I,O) :-
+	processAtom(P,Arg,I,O,TS,ProB).
 
 
 atom_compl(F,F_) :-

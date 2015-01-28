@@ -653,8 +653,8 @@ process_AssertedRules :-
 	Head =.. [Name|ArgsHead],
 	ProHead =.. [Name,I,O|ArgsHead],
 	term_to_atom(H,HA),
-	%ProH =.. [HA,I,O,TS|Arg],
-	%my_incr_assert((ProHead :- ProH, Incr)),
-	my_incr_assert((ProHead :- fluent(HA,Arg,I,O,TS), Incr)),
+	ProH =.. [HA,I,O,TS|Arg],
+	my_incr_assert((ProHead :- ProH, Incr)),
+	%my_incr_assert((ProHead :- fluent(HA,Arg,I,O,TS), Incr)),
 	fail.
 process_AssertedRules.	

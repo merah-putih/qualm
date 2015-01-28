@@ -23,7 +23,7 @@
 
 :- dynamic upd_abd/4, not_upd_abd/4 as incremental.
 
-:- table fluent/5 as incremental.
+%:- table fluent/5 as incremental.
 
 
 /*
@@ -174,11 +174,14 @@ consider(In,Out,T,Abd) :-
 */
 
 consider(I,O,T,Abd) :-
-	fluent(make,[Abd],I,O,T).
+	%fluent(make,[Abd],I,O,T).
+	make(I,O,T,Abd).
 
 consider(I,O,T,Abd) :-
-	fluent(upd_abd,[Abd],I,O1,G), !,
-	fluent(not_make_not,[Abd],O1,O,H),
+	%fluent(upd_abd,[Abd],I,O1,G), !,
+	%fluent(not_make_not,[Abd],O1,O,H),
+	upd_abd(I,O1,G,Abd), !,
+	not_make_not(O1,O,H,Abd),
 	latest([(not_make_not,[Abd],O1,O,H),(upd_abd,[Abd],I,O1,G)],T).
 
 consider(I,O,T,Abd) :-
@@ -196,28 +199,38 @@ not_consider(I,O,T,A) :-
 	latest([Lit0,Lit1,Lit2],T).
 
 consider_st0((not_make,[A],I,O,T),I,O,A) :-
-	(fluent(not_make,[A],I,O,T) -> true;
+	%(fluent(not_make,[A],I,O,T) -> true;
+	(not_make(I,O,T,A) -> true;
 	 (O=I, T=0)
 	).
 
 consider_st1((not_upd_abd,[A],I,O,T),I,O,A) :-
-	(fluent(not_upd_abd,[A],I,O,T) -> true;
+	%(fluent(not_upd_abd,[A],I,O,T) -> true;
+	(not_upd_abd(I,O,T,A) -> true;    
 	 (O=I, T=0)
 	).
 
 consider_st1((make_not,[A],O1,O,T),I,O,A) :-
-	fluent(upd_abd,[A],I,O1,T1),
-	fluent(make_not,[A],O1,O,T),
+	%fluent(upd_abd,[A],I,O1,T1),
+	%fluent(make_not,[A],O1,O,T),
+	upd_abd(I,O1,T1,A),
+	make_not(O1,O,T,A),
 	verify_lits([(upd_abd,[A],I,O1,T1)],T).
-	   
 
+
+consider_st2(T,I,O,A) :-
+	(upd_abd(_,_,_,A) ->
+	    not_upd_abd(I,O,T,A);
+	    abduce_not(T,I,O,A)
+	).
+
+/*
 consider_st2(T,I,O,A) :-
 	(fluent(upd_abd,[A],_,_,_) ->
 	    fluent(not_upd_abd,[A],I,O,T);
 	    abduce_not(T,I,O,A)
-%	 consider_st2_aux(T,I,O,A)
 	).
-
+*/
 
 abduce_not(T,I,O,A) :-
 	A =.. [Pred|Args],
@@ -225,16 +238,6 @@ abduce_not(T,I,O,A) :-
 	NotA =.. [NegA,I,O,T|Args],
 	call(NotA).
 
-
-
-consider_st2_aux((not_expect,[A],I,O,T),I,O,A) :-
-	fluent(not_expect,[A],I,O,T).
-
-consider_st2_aux((expect_not,[A],O1,O,T),I,O,A) :-
-	fluent(expect,[A],I,O1,T1),
-	fluent(expect_not,[A],O1,O2,T),
-	abduce_not(T,O2,O,A),
-	verify_lits([(expect,[A],I,O1,T1)],T).
 
 
 %%%%
@@ -509,31 +512,12 @@ compute(P,Arg,I,O,H,Qt,TV) :-
 	).
 	    
 compute(P,Arg,I,O,H,Qt,TV) :-
-	(bagof((Arg,Ms),bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), T=<Qt),Ms),Ls) ->
+	(bagof((Arg,Ms),bagof((T,O,Truth),(G =.. [P,I,O,T|Arg], call_tv(G,Truth), T=<Qt),Ms),Ls) ->
 	    (member((Arg,Ms),Ls),most_recent(Ms,H,O,TV));
 	    (H=0, TV=false)
 	).
 
 
-/*
-compute(P,Arg,I,O,H,Qt,TV) :-
-	length(Arg,Len_Arg),
-	Len_NArg is Len_Arg+3,
-	functor(P1,P,Len_NArg),
-	(clause(P1,_) ->
-	 (bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), T=<Qt),Ls), most_recent(Ls,H,O,TV));
-	 (H=0, TV=false)
-	).
-*/
-
-/*
-compute(P,Arg,I,O,H,Qt,TV) :-
-	copy_term([Arg,I,O],[CopyArg,CopyI,CopyO]),
-	(call_tv(fluent(P,CopyArg,CopyI,CopyO,_),_) ->
-	 (bagof((T,O,Truth),(call_tv(fluent(P,Arg,I,O,T),Truth), T=<Qt),Ls), most_recent(Ls,H,O,TV));
-	 (H=0, TV=false)
-	).
-*/
 
 
 /*
@@ -698,12 +682,13 @@ verify(H,TV,H_,_) :- H >= H_, TV.
 
 %%%
 
+/*
 fluent(FlName,Arg,I,O,Ht) :-
 	upper(Lim),
 	Fluent =.. [FlName,I,O,Ht|Arg],
 	Fluent,
 	(var(Ht) -> true; Ht =< Lim).
-
+*/
 
 %%%%
 
@@ -808,11 +793,18 @@ overridden(F,A,I,O,T,Up) :-
 	H =< Up, H > T.
 */
 
+/*
 overridden(F,A,I,O,T,Up) :-
 	(is_lits(F,A) ->
 	 fluent(F,A,I,O,H);
 	 (Pred =.. [F,I,O,H|A], call(Pred))
 	),
+        H =< Up, H > T.
+*/
+
+overridden(F,A,I,O,T,Up) :-
+	Pred =.. [F,I,O,H|A],
+	call(Pred),
         H =< Up, H > T.
 
 
