@@ -1,4 +1,4 @@
-| ?- consultQ("examples/th1a").
+| ?- consultQ("examples/th1b").
 
 [Compiling ./tab]
 [tab compiled, cpu time used: 0.0380 seconds]
