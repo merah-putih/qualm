@@ -248,22 +248,22 @@ produce(PT*NT,PI*NI,PE*NE) :-
 
 cm_pos([],PI,_,PI).
 cm_pos([E|_],_,NI,_) :-
-	memberO(not(E),NI), !, fail.
+	nonvar(NI), memberO(not(E),NI), !, fail.
 cm_pos([E|Es],PI,NI,NewPI) :-
 	insertElem(E,PI,AccPI), cm_pos(Es,AccPI,NI,NewPI).
 
 cm_neg([],_,NI,NI).
 cm_neg([not(A)|_],PI,_,_) :-
-	memberO(A,PI), !, fail.
+	nonvar(PI), memberO(A,PI), !, fail.
 cm_neg([not(A)|Es],PI,NI,NewNI) :-
 	insertElem(not(A),NI,AccNI), cm_neg(Es,PI,AccNI,NewNI).
 
 %%%%  
 
 insert(not(A),P*_,_) :-
-	memberO(A,P), !, fail.
+	nonvar(P), memberO(A,P), !, fail.
 insert(not(A),P*N,P*NewN) :- !, insertElem(not(A),N,NewN).
-insert(A,_*N,_) :- memberO(not(A),N), !, fail.
+insert(A,_*N,_) :- nonvar(N), memberO(not(A),N), !, fail.
 insert(A,P*N,NewP*N) :- insertElem(A,P,NewP).
 
 

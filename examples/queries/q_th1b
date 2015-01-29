@@ -181,7 +181,7 @@ yes
 
 
 % NO! The five would still have been saved!
-% It is DTE (as well as DDE) impermissible!
+% But is it DTE impermissible?
 | ?- query(save_from(t),O).
 
 no
