@@ -529,7 +529,9 @@ find_rules(H,A,R) :-
 index_rules(Head,N,[rule(N,Head,Body)|Rs]) :-
 	copy_term(Head,Head1),
 	retract(rule(Head,Body)), !,
-	my_assert(rule(N,Head,Body)),
+	extract_abds(Body,Abds,NonAbds),
+	append(Abds,NonAbds,ArrangeB),
+	my_assert(rule(N,Head,ArrangeB)),
 	NewN is N+1,
 	index_rules(Head1,NewN,Rs).
 index_rules(_,_,[]).
@@ -563,9 +565,9 @@ extract_abds([B|Bs],Cs,[B|Ns]) :-
 
 process_tab_rules([]).
 process_tab_rules([rule(_,H,B)|Rs]) :-
-	extract_abds(B,Abds,NonAbds),
-	append(Abds,NonAbds,ArrangeB),
-	process_tab_rule(H,ArrangeB), 
+%	extract_abds(B,Abds,NonAbds),
+%	append(Abds,NonAbds,ArrangeB),
+	process_tab_rule(H,B), 
 	process_tab_rules(Rs).
 
 process_tab_rule(H,[]) :- !,
