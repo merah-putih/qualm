@@ -180,7 +180,7 @@ Pending counterfactual update: not hit(t,heavier_guy), at time 5.0100
 yes
 
 
-% NO! The five would still have been saved!
+% The five would not have been saved!
 % It is DTE (as well as DDE) impermissible!
 | ?- query(save_from(t),O).
 
@@ -213,6 +213,17 @@ yes
 Pending counterfactual update: not push(heavier_guy), at time 6.0100
 
 yes
+
+% ticking one time ahead, assuming the hypothetical action push(heavier_guy) happened in the past.
+| ?- uptime.
+
+yes
+| ?- current(T).
+
+T = 7;
+
+no
+
 
 % " ... the heavier guy would still have been hit by t!"
 % So it's not pushing this heavier guy that made him hit by t in the first place!
