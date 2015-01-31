@@ -1,6 +1,6 @@
 :- consult(preprocess).
 
-:- import member/2,length/2 from basics.
+:- import member/2,length/2,select/3,append/3 from basics.
 :- import trie_create/2, trie_drop/1, trie_intern/2, trie_property/2, trie_interned/2 from intern.
 :- import incr_assert/1, incr_retractall/1, incr_assert_inval/1 from increval.
 :- import prepare/1 from gensym.
@@ -274,23 +274,26 @@ dual(RNum,RTempl,Head,LitDual,I,O) :-
 	dual(Trie,RNum,RTempl,Head,LitDual,I,O).
 
 dual(Trie,RNum,RTempl,Head,LitDual,I,O) :-
-	trie_interned(d(RNum,RTempl,IT,OT,DualBody,LitDual,_),Trie),
+	trie_interned(d(RNum,RTempl,IT,OT,DualBody,LitDual),Trie),
 	copy_term(Head,Head1),
 	call_dual(Head1,I,O,RTempl,IT,OT,DualBody).
 
 dual(Trie,RNum,RTempl,Head,LitDual,I,O) :-
 	next_dualize(Trie,RNum,RTempl,Lits),
-	dualize(Lits,Dual,ResLits),
+	dualize(Lits,Dual),
 	processDual(Dual,LitDual,DualBody,IT,OT,[]),
-	new_store_dual(Trie,RNum,RTempl,IT,OT,DualBody,LitDual,ResLits),
+	new_store_dual(Trie,RNum,RTempl,IT,OT,DualBody,LitDual),
 	copy_term(Head,Head1),
 	call_dual(Head1,I,O,RTempl,IT,OT,DualBody).
 
-next_dualize(Trie,RNum,RTempl,Track) :-
-	trie_interned(d(RNum,RTempl,_,_,_,_,Track),Trie), !.
+
+%next_dualize(Trie,RNum,RTempl,Track) :-
+%	trie_interned(d(RNum,RTempl,_,_,_,_,Track),Trie), !.
 next_dualize(_,RNum,RTempl,Track) :-
 	rule(RNum,RTempl,Track).
 
+
+/*
 dualize([(A,Args,TS)],[(NA,Args,TS)],[]) :- !,
 	negLit(A,NA).
 dualize([(A,Args,TS)|As],[(NA,Args,TS)],As) :-
@@ -299,21 +302,43 @@ dualize([(not(_),_,_)|B],NB,Rest) :-
 	!, dualize(B,NB,Rest).
 dualize([A|B],[A|NB],Rest) :-
 	dualize(B,NB,Rest).
+*/
+
+dualize(Lits,Dual) :-
+	select((A,Args,TS),Lits,PreLits),
+	negLit(A,NA),
+	append(PreLits,[(NA,Args,TS)],Dual).
 
 
-processDual([A],LitDual,(ProA,Latest),I,O,Ls) :- !,
+timed_dual(Ls,T) :-
+	(var(T) ->
+	    (latest_time(Ls,Ts),
+		(var(Ts) -> qt(T);
+		    T=Ts
+		)
+	    );
+	    true
+	).	
+
+%processDual([A],LitDual,(ProA,Latest),I,O,Ls) :- !,
+%	processBodyLatest(A,LitDual,ProA,I,O),
+%	LitDual = (_,_,_,_,T),
+%	Latest =.. [verify_lits,Ls,T].
+processDual([A],LitDual,(ProA,Timed_Dual),I,O,Ls) :- !,
 	processBodyLatest(A,LitDual,ProA,I,O),
 	LitDual = (_,_,_,_,T),
-	Latest =.. [verify_lits,Ls,T].
+	Timed_Dual =.. [timed_dual,Ls,T].
+processDual([not(_)|B],LitDual,ProB,I,O,Ls) :- !,
+	%processBodyLatest(A,L,ProA,I,OA),
+	processDual(B,LitDual,ProB,I,O,Ls).
 processDual([A|B],LitDual,(ProA,ProB),I,O,Ls) :-
 	processBodyLatest(A,L,ProA,I,OA),
 	processDual(B,LitDual,ProB,OA,O,[L|Ls]).
 
 
-new_store_dual(Trie,RNum,RTempl,I,O,Dual,LitDual,ResNon) :- 
-	next_dualize(Trie,RNum,RTempl,_),
-	trie_intern(d(RNum,RTempl,I,O,Dual,LitDual,ResNon),Trie).
-	%incr_trie_intern(Trie,d(RNum,RTempl,I,O,Dual,LitDual,ResNon)).
+new_store_dual(Trie,RNum,RTempl,I,O,Dual,LitDual) :- 
+	%next_dualize(Trie,RNum,RTempl,_),
+	trie_intern(d(RNum,RTempl,I,O,Dual,LitDual),Trie).
 
 call_dual(H,I,O,H,I,O,DualBody) :-
 	call(DualBody).
