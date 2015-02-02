@@ -180,14 +180,17 @@ consider(I,O,T,Abd) :-
 consider(I,O,T,Abd) :-
 	%fluent(upd_abd,[Abd],I,O1,G), !,
 	%fluent(not_make_not,[Abd],O1,O,H),
-	!, upd_abd(I,O1,G,Abd),
+	upd_abd(I,O1,G,Abd),
 	not_make_not(O1,O,H,Abd),
 	latest([(not_make_not,[Abd],O1,O,H),(upd_abd,[Abd],I,O1,G)],T).
 
 consider(I,O,T,Abd) :-
-	Abd =.. [Pred|Args],
-	A =.. [Pred,I,O,T|Args],
-	call(A).
+	(not upd_abd(_,_,_,Abd) ->
+	    (Abd =.. [Pred|Args],
+	    A =.. [Pred,I,O,T|Args],
+	    call(A)
+	    )
+	).
 
 %%%%%
 
