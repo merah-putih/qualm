@@ -180,7 +180,7 @@ consider(I,O,T,Abd) :-
 consider(I,O,T,Abd) :-
 	%fluent(upd_abd,[Abd],I,O1,G), !,
 	%fluent(not_make_not,[Abd],O1,O,H),
-	upd_abd(I,O1,G,Abd), !,
+	!, upd_abd(I,O1,G,Abd),
 	not_make_not(O1,O,H,Abd),
 	latest([(not_make_not,[Abd],O1,O,H),(upd_abd,[Abd],I,O1,G)],T).
 
@@ -241,6 +241,17 @@ abduce_not(T,I,O,A) :-
 
 
 %%%%
+
+produce(PI*NI,PI*NI,PE*NE) :-
+	var(PE), var(NE), !.
+
+produce(PI*NT,PI*NI,PE*NE) :-
+	var(PE), !,
+	cm_neg(NE,PI,NI,NT).
+
+produce(PT*NI,PI*NI,PE*NE) :-
+	var(NE), !,
+	cm_pos(PE,PI,NI,PT).
 
 produce(PT*NT,PI*NI,PE*NE) :-
 	cm_pos(PE,PI,NI,PT),
@@ -413,9 +424,10 @@ act_assert(Qt) :-
 	fail.
 act_assert(_).
 
-act_update(not('#(r)'(H,B)),Ht) :- !,
-	%collectPrefsArt(F_,_,F,Arg),
-	Fluent =.. ['not_#(r)',_,_,Ht,H,B],
+act_update(not(F_),Ht) :- !,
+	collectPrefsArt(not(F_),_,F,Arg),
+	%Fluent =.. ['not_#(r)',_,_,Ht,H,B],
+	Fluent =.. [F,_,_,Ht|Arg],
 	incr_assert_inval_IfNot(Fluent).
 
 act_update(F_,Ht) :-
@@ -484,7 +496,8 @@ holds(Lit,I,O,H,Qt) :-
 	%act_assert(Qt),
 	collectPrefsArt(Lit,_,P,Arg),
 	compute(P,Arg,I,O,H,Qt,TV),
-	atom_compl(P,P_),	
+	atom_compl(P,P_),
+	%(var(O) -> O=I; true),
 	compute(P_,Arg,I,O,H_,Qt,TV_),
 	verify(H,TV,H_,TV_).
 
@@ -745,8 +758,8 @@ verify_lits(Ls,T) :-
 		    T=Ts
 		)
 	    );
-	    true),
-	test_lits(Ls,T).
+	    true).
+	%test_lits(Ls,T).
 
 
 test_lits([],_).

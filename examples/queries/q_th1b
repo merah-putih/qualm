@@ -1,4 +1,4 @@
-| ?- consultQ("examples/th1a").
+| ?- consultQ("examples/th1b").
 
 [Compiling ./tab]
 [tab compiled, cpu time used: 0.0380 seconds]
@@ -180,7 +180,7 @@ Pending counterfactual update: not hit(t,heavier_guy), at time 5.0100
 yes
 
 
-% NO! The five would still have been saved!
+% The five would not have been saved!
 % But is it DTE impermissible?
 | ?- query(save_from(t),O).
 
