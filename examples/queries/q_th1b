@@ -1,4 +1,4 @@
-| ?- consultQ("examples/th1a").
+| ?- consultQ("examples/th1b").
 
 [Compiling ./tab]
 [tab compiled, cpu time used: 0.0380 seconds]
@@ -8,9 +8,12 @@ yes
 
 % switch off the rule related to abducible 'push' for the intial scenario that only involves diverting the trolley.
 
-| ?- updates([not '#(r)'('on_sidetrack(_h0)','[on_bridge(_h0),consider(push(_h0))]'),not '#(r)'('on_sidetrack(_h0)','[consider(push(_h0)),lean(_h1,_h0)]')]).
+
+| ?- updates([not '#(r)'('on_sidetrack(_h0)','[on_bridge(_h0),consider(push(_h0))]'),not '#(r)'('on_sidetrack(_h0)','[lean(_h0,_h1),consider(push(_h1))]')]).
 Pending update: not #(r)(on_sidetrack(_h0),[on_bridge(_h0),consider(push(_h0))]), at current time 2
-Pending update: not #(r)(on_sidetrack(_h0),[consider(push(_h0)),lean(_h1,_h0)]), at current time 2
+Pending update: not #(r)(on_sidetrack(_h0),[lean(_h0,_h1),consider(push(_h1))]), at current time 2
+
+yes
 
 
 % it is foggy (as a fact in the program):
@@ -128,13 +131,11 @@ yes
 no
 
 % but the robot has some rules regarding pushing action (abducible push/1), switching on these rules now.
-| ?- updates(['#(r)'('on_sidetrack(_h0)','[on_bridge(_h0),consider(push(_h0))]'),'#(r)'('on_sidetrack(_h0)','[consider(push(_h0)),lean(_h1,_h0)]')]).
+| ?- updates(['#(r)'('on_sidetrack(_h0)','[on_bridge(_h0),consider(push(_h0))]'),'#(r)'('on_sidetrack(_h0)','[lean(_h0,_h1),consider(push(_h1))]')]).
 Pending update: #(r)(on_sidetrack(_h0),[on_bridge(_h0),consider(push(_h0))]), at current time 5
-Pending update: #(r)(on_sidetrack(_h0),[consider(push(_h0)),lean(_h1,_h0)]), at current time 5
+Pending update: #(r)(on_sidetrack(_h0),[lean(_h0,_h1),consider(push(_h1))]), at current time 5
 
 yes
-
-
 
 
 % the robot knows that the five can still be saved from t, by pushing the existing cargo on the bridge over the looping track
@@ -181,7 +182,7 @@ yes
 
 
 % The five would not have been saved!
-% It is DTE (as well as DDE) impermissible!
+% But is it DTE impermissible?
 | ?- query(save_from(t),O).
 
 no
@@ -195,34 +196,35 @@ yes
 
 
 % the robot argues that it should not be impermissible by DTE via counterfactual reasoning: if the heavier guy had not been pushed, he would not have been hit by the trolley.
-% explaining the factual observation:
-| ?- query((push(heavier_guy),hit(t,heavier_guy)),O).
-
-O = [push(6,heavier_guy)] * [];
-
-no
-
-% fixed the abduced background context
-| ?- updates([(push(heavier_guy),6)]).
-Pending update: push(heavier_guy), at time 6
+% update with hypothetical action to push the heavier guy at the time when the cargo was pushed.
+| ?- updates([(push(heavier_guy),5)]).
+Pending update: push(heavier_guy), at time 5
 
 yes
 
-% "if the heavier guy had not been pushed ..."
-| ?- updates([make_not(push(heavier_guy))]).
-Pending counterfactual update: not push(heavier_guy), at time 6.0100
-
-yes
-
-% ticking one time ahead, assuming the hypothetical action push(heavier_guy) happened in the past.
-| ?- uptime.
-
-yes
+% just checking that the current timestamp, that we are at present (not in the past: T=6 > 5)
 | ?- current(T).
 
-T = 7;
+T = 6;
 
 no
+
+% just checking which object that were pushed (including the hypothetical one: heavier_guy)
+| ?- query(push(Obj),O).
+
+Obj = cargo
+O = [] * [];
+
+Obj = heavier_guy
+O = [] * [];
+
+no
+
+% "if the heavier guy had not been pushed ..." 
+| ?- updates([make_not(push(heavier_guy))]).
+Pending counterfactual update: not push(heavier_guy), at time 5.0100
+
+yes
 
 
 % " ... the heavier guy would still have been hit by t!"
@@ -236,7 +238,7 @@ no
 % The robot argues, it is by pushing the cargo that made him hit by the trolley t, so being hit by t is just a side-effect of pushing the cargo.
 % To show that, let's first return to the factual state.
 | ?- updates([not make_not(push(heavier_guy))]).
-Pending cancel counterfactual update: not push(heavier_guy), at time 6.0200
+Pending cancel counterfactual update: not push(heavier_guy), at time 5.0200
 
 yes
 

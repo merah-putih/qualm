@@ -448,7 +448,7 @@ process_Facts :-
 	retract(hasFacts(H,A)),
 	find_facts(H,A,R),
 	processFacts(R),
-	%processNegFact(H,A),
+	processNegFact(H,A),
 	fail.
 process_Facts.
 
@@ -462,13 +462,13 @@ processFacts([fact(H,TS)|Fs]) :-
 	processAtom(Head,Args,I,I,TS,ProH),
 	my_incr_assert(ProH),
 	processFacts(Fs).
-/*
+
 processNegFact(H,A) :-
 	makeList(A,Args),
-	processLit(not(H),Args,I,I,1,ProH),
+	processLit(not(H),Args,_,_,_,ProH),
 	processAtom(H,Args,_,_,_,ProB),
 	my_assert((ProH :- \+ ProB)).
-*/
+
 process_Rules :-
 	retract(hasRules(H,A)),
 	find_rules(H,A,R),
@@ -653,8 +653,8 @@ process_AssertedRules :-
 	Head =.. [Name|ArgsHead],
 	ProHead =.. [Name,I,O|ArgsHead],
 	term_to_atom(H,HA),
-	%ProH =.. [HA,I,O,TS|Arg],
-	%my_incr_assert((ProHead :- ProH, Incr)),
-	my_incr_assert((ProHead :- fluent(HA,Arg,I,O,TS), Incr)),
+	ProH =.. [HA,I,O,TS|Arg],
+	my_incr_assert((ProHead :- ProH, Incr)),
+	%my_incr_assert((ProHead :- fluent(HA,Arg,I,O,TS), Incr)),
 	fail.
 process_AssertedRules.	

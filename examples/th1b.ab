@@ -28,8 +28,9 @@ person(heavier_guy).
 
 on_bridge(cargo).
 
-on_sidetrack(Y) <- on_bridge(Y),push(Y).
-on_sidetrack(Y) <- push(X), lean(Y,X).
+% before push/1 is abduced, it should be guaranteed that its argument is instantiated
+on_sidetrack(Y) <- on_bridge(Y),push(Y). %instantiated by on_bridge/1
+on_sidetrack(Y) <- lean(Y,X), push(X). %instantiated by lean/2
 
 lean(heavier_guy,cargo).
 
