@@ -1,0 +1,7 @@
+abds([fight/1]).
+
+
+false <- know_gandhi, not follow_gandhi.
+follow_gandhi <- not fight(ninja).
+
+know_gandhi.

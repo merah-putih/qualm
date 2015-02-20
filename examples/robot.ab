@@ -1,0 +1,23 @@
+abds([fight/1]).
+
+save_princess <- utilitarian, minion(X), fight(X), prolog(survive_from(X)).
+save_princess <- knight, minion(X), fight(X).
+
+beginProlog.
+survive_from(X) :- pr_survival(X,P), P > 0.6.
+
+pr_survival(spider,0.4).
+pr_survival(ninja,0.7).
+endProlog.
+
+%utilitarian <- not knight.
+
+minion(spider).
+minion(ninja).
+
+utilitarian.
+
+%%%
+
+%false <- know_gandhi, not follow_gandhi.
+%follow_gandhi <- not fight(ninja).
