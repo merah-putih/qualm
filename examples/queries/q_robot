@@ -1,0 +1,76 @@
+% in this scenario, the gandhi rule is imposed by the princess (other agent) as input abductive context.
+
+| ?- consultQ("examples/robot").
+[Compiling ./prologAuxCode]
+[prologAuxCode compiled, cpu time used: 0.0020 seconds]
+[prologAuxCode loaded]
+
+[Compiling ./tab]
+[tab compiled, cpu time used: 0.0070 seconds]
+[tab loaded]
+
+yes
+
+
+% in the beginning, no rule to save the princess in distress by switching off all (two) rules to save the princess: both utilitarian and knight rule. 
+| ?- updates([not '#(r)'(save_princess,'[minion(_h0),consider(fight(_h0)),prolog(survive_from(_h0))]'), not '#(r)'(save_princess,'[minion(_h0),consider(fight(_h0))]')]).
+Pending update: not #(r)(save_princess,[minion(_h0),consider(fight(_h0)),prolog(survive_from(_h0))]), at current time 2
+Pending update: not #(r)(save_princess,[minion(_h0),consider(fight(_h0))]), at current time 2
+
+yes
+
+% without adopting any rule to save the princess, princess is not saved.
+| ?- query(save_princess,O).
+
+no
+
+% the robot follows utilitarian: switch on the utilitarian rule.
+| ?- updates(['#(r)'(save_princess,'[minion(_h0),consider(fight(_h0)),prolog(survive_from(_h0))]')]).
+Pending update: #(r)(save_princess,[minion(_h0),consider(fight(_h0)),prolog(survive_from(_h0))]), at current time 3
+
+yes
+
+% according to the utilitarian, wrt, robot's survival, fight the ninja to save the princess
+| ?- query(save_princess,O).
+
+O = [fight(3,ninja)] * [];
+
+no
+
+% the princess was angry, and impose gandhi moral, in this case by imposing not to fight human minion, i.e., ninja. Here, it is added as input abductive context imposed by other agent (the princess/authority). But then, as the agent still adopts utilitarianism it is not willing to kill spider as it won't survive. So it cancels its mission.
+| ?- query(save_princess,[]*[not fight(_,ninja)],O).
+
+no
+
+% the princess was angry again because she was not saved, and now ask the robot to save her whatever it takes, i.e., asking the robot to adopt the knight rule: switch off the utilitarian rule and switch on the knight rule.
+| ?- updates([not '#(r)'(save_princess,'[minion(_h0),consider(fight(_h0)),prolog(survive_from(_h0))]'), '#(r)'(save_princess,'[minion(_h0),consider(fight(_h0))]')]).
+Pending update: not #(r)(save_princess,[minion(_h0),consider(fight(_h0)),prolog(survive_from(_h0))]), at current time 4
+Pending update: #(r)(save_princess,[minion(_h0),consider(fight(_h0))]), at current time 4
+
+yes
+
+% a scenario: without gandhi rule imposed by the princess, there are two ways to save her.
+| ?- query(save_princess,O).
+
+O = [fight(4,spider)] * [];
+
+O = [fight(4,ninja)] * [];
+
+no
+
+% another scenarion: with gandhi rule (and now with knight rule, too), the only way to save the princess is to fight the spider.
+| ?- query(save_princess,[]*[not fight(_,ninja)],O).
+
+O = [fight(4,spider)] * [not fight(4,ninja)];
+
+no
+
+% unluckily, the robot won't survive to save the princess, being killed by the spider as it has lower survival (compared to ninja).
+| ?- query(save_princess,[]*[not fight(_,ninja)],[fight(_,M)]*_), survive_from(M).
+
+no
+| ?- query(save_princess,[]*[not fight(_,ninja)],[fight(_,M)]*_), not survive_from(M).
+
+M = spider;
+
+no

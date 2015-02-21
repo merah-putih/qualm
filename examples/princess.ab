@@ -1,7 +1,15 @@
 abds([fight/1]).
 
+minion(spider).
+minion(ninja).
+
+human(ninja).
 
 false <- know_gandhi, not follow_gandhi.
-follow_gandhi <- not fight(ninja).
+follow_gandhi <- minion(X), human(X), not fight(X).
+
 
 know_gandhi.
+
+% Alternatively, we could consider a program consisting only:
+% follow_gandhi <- minion(X), human(X), not fight(X).
