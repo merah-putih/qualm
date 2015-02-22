@@ -24,3 +24,5 @@ human(ninja).
 
 false <- know_gandhi, not follow_gandhi.
 follow_gandhi <- minion(X), human(X), not fight(X).
+
+know_gandhi.

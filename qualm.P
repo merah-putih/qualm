@@ -500,9 +500,12 @@ holds(Lit,I,O,H,Qt) :-
 	collectPrefsArt(Lit,_,P,Arg),
 	compute(P,Arg,I,O,H,Qt,TV),
 	atom_compl(P,P_),
-	%(var(O) -> O=I; true),
+	(var_context(O) -> O=I; true),
 	compute(P_,Arg,I,O,H_,Qt,TV_),
 	verify(H,TV,H_,TV_).
+
+var_context(P*N) :-
+	var(P), var(N).
 
 /*
 compute(P,Arg,I,O,H,Qt,TV) :-
