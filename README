@@ -1,8 +1,1 @@
-Joint Tabling of Logic Program Abduction, Updating, and Intervention
-
-Reports:
-- Joint tabling of LP Abduction and Updating:
-http://arxiv.org/abs/1405.2058
-
-- Counterfactuals in LP Abduction and Updating:
-TBA
+Qualm: a LP system, implemented in XSB Prolog, that combines contextual abduction, updating, and counterfactuals, afforded by tabling mechanisms (tabling in contextual abduction and incremental tabling of fluent literals updates).
