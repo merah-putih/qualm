@@ -1,0 +1,4 @@
+abds([a / 0,b / 0]).
+q <- consider(a),s.
+q <- r,consider(b).
+s.
