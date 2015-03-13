@@ -427,17 +427,11 @@ act_assert(Qt) :-
 	fail.
 act_assert(_).
 
-act_update(not(F_),Ht) :- !,
-	collectPrefsArt(not(F_),_,F,Arg),
-	%Fluent =.. ['not_#(r)',_,_,Ht,H,B],
-	Fluent =.. [F,_,_,Ht|Arg],
-	incr_assert_inval_IfNot(Fluent).
 
 act_update(F_,Ht) :-
 	collectPrefsArt(F_,_,F,Arg),
 	Fluent =.. [F,I,I,Ht|Arg],
 	incr_assert_inval_IfNot(Fluent).
-
 	
 
 test_abducible(not G,H) :- !,
