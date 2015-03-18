@@ -492,11 +492,11 @@ holds(_,_,_,_,Qt) :-
 holds(Lit,I,O,H,Qt) :-
 	%act_assert(Qt),
 	collectPrefsArt(Lit,_,P,Arg),
-	compute(P,Arg,I,O,H,Qt,TV),
+	compute(P,Arg,I,O,H,Qt),
 	atom_compl(P,P_),
 	(var_context(O) -> O=I; true),
-	compute(P_,Arg,I,O,H_,Qt,TV_),
-	verify(H,TV,H_,TV_).
+	compute(P_,Arg,I,O,H_,Qt),
+	verify(H,H_).
 
 var_context(P*N) :-
 	var(P), var(N).
@@ -517,17 +517,17 @@ valid_time(T,Qt) :-
 	).
 	    
 
-compute(P,Arg,I,O,H,Qt,TV) :-
+compute(P,Arg,I,O,H,Qt) :-
 	(P=consider;P=not_consider), !,
-	(bagof((Arg,Ms),bagof((T,O,true),G^(G =.. [P,I,O,T|Arg], call(G), valid_time(T,Qt)),Ms),Ls) ->
-	    (member((Arg,Ms),Ls),most_recent(Ms,H,O,TV));	    
-	    (H=0, TV=false)
+	(bagof((Arg,Ms),bagof((T,O),G^(G =.. [P,I,O,T|Arg], call(G), valid_time(T,Qt)),Ms),Ls) ->
+	    (member((Arg,Ms),Ls),most_recent(Ms,H,O));	    
+	    H=0
 	).
 	    
-compute(P,Arg,I,O,H,Qt,TV) :-
-	(bagof((Arg,Ms),bagof((T,O,Truth),G^(G =.. [P,I,O,T|Arg], call_tv(G,Truth), T=<Qt),Ms),Ls) ->
-	    (member((Arg,Ms),Ls),most_recent(Ms,H,O,TV));
-	    (H=0, TV=false)
+compute(P,Arg,I,O,H,Qt) :-
+	(bagof((Arg,Ms),bagof((T,O),G^(G =.. [P,I,O,T|Arg], call(G), T=<Qt),Ms),Ls) ->
+	    (member((Arg,Ms),Ls),most_recent(Ms,H,O));
+	    H=0
 	).
 
 
@@ -568,10 +568,10 @@ subset(P1*N1,P2*N2) :-
 %%%%
 
 
-most_recent(Ls,H,O,TV) :-
+most_recent(Ls,H,O) :-
 	%unique(Ls,Ms_),
 	recent_unique(Ls,Ms),
-	member((H,O,TV),Ms),
+	member((H,O),Ms),
 	(var(O) -> true; timed_abds(O,H)).
 
 	
@@ -584,21 +584,21 @@ recent_unique(Ls,Ms) :-
 
 recent_unique([],Max,Ts,Ms) :-
 	merging(Max,Ts,Ms).
-recent_unique([(T,O,TV)|Ls],Max,_,Ms) :-
+recent_unique([(T,O)|Ls],Max,_,Ms) :-
 	T > Max, !,
-	recent_unique(Ls,T,[(O,TV)],Ms).
-recent_unique([(T,_,_)|Ls],Max,Ts,Ms) :-
+	recent_unique(Ls,T,[O],Ms).
+recent_unique([(T,_)|Ls],Max,Ts,Ms) :-
 	T < Max, !,
 	recent_unique(Ls,Max,Ts,Ms).
-recent_unique([(_,O,TV)|Ls],Max,Ts,Ms) :-
-	(covered((O,TV),Ts,Rs) ->
+recent_unique([(_,O)|Ls],Max,Ts,Ms) :-
+	(covered(O,Ts,Rs) ->
 	    recent_unique(Ls,Max,Rs,Ms);
-	    recent_unique(Ls,Max,[(O,TV)|Ts],Ms)
+	    recent_unique(Ls,Max,[O|Ts],Ms)
 	).
 
 
 merging(_,[],[]).
-merging(T,[(O,TV)|Ls],[(T,O,TV)|Hs]) :-
+merging(T,[O|Ls],[(T,O)|Hs]) :-
 	merging(T,Ls,Hs).
 		     
 %%%%
@@ -619,11 +619,7 @@ member_max((T1,O1,TV1),[(T2,O2,TV2)|Vs],[(T3,O3,TV3)|Vs]) :-
 member_max(Z,[V|Vs],[V|Ws]) :-
 	member_max(Z,Vs,Ws).
 
-covered((O1,true),[(O2,undefined)|Os],[(O1,true)|Os]) :-
-	same_str(O1,O2), !.
-covered((O1,undefined),[(O2,true)|Os],[(O2,true)|Os]) :-
-	same_str(O1,O2), !.
-covered((O1,T),[(O2,T)|Ts],[(O2,T)|Ts]) :-
+covered(O1,[O2|Os],[O1|Os]) :-
 	same_str(O1,O2), !.
 covered(OT,[_|Ts],Rs) :-
 	covered(OT,Ts,Rs).
@@ -702,8 +698,7 @@ maxi_true((_,_,_),(T2,O2,TV),(T2,O2,TV)).
 
 %%%%
 
-verify(_,undefined,_,true) :- !, fail.
-verify(H,TV,H_,_) :- H >= H_, TV.
+verify(H,H_) :- H >= H_.
 
 %%%
 

@@ -287,7 +287,7 @@ assertRuleNames(N) :-
 processClauses :-
 	process_init,
 	process_FailRules,
-	process_UndefRules,
+	%process_UndefRules,
 	process_Abds,
 	%process_FailRules,
 	process_Facts,
@@ -308,79 +308,17 @@ process_init(C,Start) :-
 	processLit(not(PredName),Args,I,I,Start,PL),
 	my_incr_assert(PL).	
 
+
+
 process_FailRules :-
-	process_expectation,
-	process_false.
-
-process_expectation :-
-	get_sol(abds(As),As),
-	process_expectation(As).
-
-process_expectation([]).
-process_expectation([A/N|As]) :-
-	functor(Abd,A,N),
-	copy_term(Abd,Abd_),
-	findall(Abd,rule(expect(Abd),_),ListE),
-	process_expect(Abd,ListE),
-	findall(Abd_,rule(expect_not(Abd_),_),ListN),
-	process_expect_not(ListE,ListN),
-	process_expectation(As).
-
-process_expect(Abd,[]) :-
-	processAtom(not_expect,[Abd],I,I,1,N_EA),
-	assert_FailRules(expect,N_EA).
-process_expect(_,[_|_]).
-
-process_expect_not([],_).
-process_expect_not([E|Es],ListN) :-
-	member(E,ListN),!,
-	process_expect_not(Es,ListN).
-process_expect_not([E|Es],ListN) :-
-	processAtom(not_expect_not,[E],I,I,1,EA),
-	assert_FailRules(expect_not,EA),
-	process_expect_not(Es,ListN).
-
-
-	
-	
-
-	
-/*
-process_expectation([]).
-process_expectation([A/N|As]) :-
-	functor(Abd,A,N),
-	(rule(expect(Abd),[]) -> true;
-	 (processAtom(not_expect,[Abd],I,I,1,N_EA),
-	  assert_FailRules(expect,N_EA))
-	),
-	(rule(expect_not(Abd),[]) -> true;
-	 (processAtom(not_expect_not,[Abd],I,I,1,EA),
-	  assert_FailRules(expect_not,EA))
-	),
-	process_expectation(As).
-*/
-
-process_false :-
-	(hasDefRules(false,0) -> true;
-	 processLit(not(false),[],I,I,1,PL),
-	 assert_FailRules(false,PL)
-	).
-	
-/*
-process_FailRules :-
-	process_FailRules(false),
-	process_FailRules(expect(_)),
-	process_FailRules(expect_not(_)).
-
-process_FailRules(L) :-
-	%retract(inBody(false)),
-	hasNoRules(L,Art,PredName), !,
+	retract(inBody(L)),
+	hasNoRules(L,Art,PredName),
 	makeList(Art,Args),
 	processLit(not(PredName),Args,I,I,1,PL),
-	%my_incr_assert(PL).
-	assert_FailRules(L,PL).
-process_FailRules(_).
-*/
+	my_incr_assert(PL),
+	fail.
+process_FailRules.
+
 
 assert_FailRules(false,PL) :- !,
 	my_assert(PL).
