@@ -30,7 +30,7 @@ assertIfNot(G) :- G, !.
 assertIfNot(G) :- my_assert(G).
 
 incr_assert_inval_IfNot(G) :- G, !.
-incr_assert_inval_IfNot(G) :- incr_assert_inval(G).
+incr_assert_inval_IfNot(G) :- incr_assert(G).
 
 is_abducible(G) :-
 	functor(G,N,A),
