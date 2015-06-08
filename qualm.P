@@ -2,7 +2,7 @@
 
 :- import member/2,length/2 from basics.
 :- import trie_create/2, trie_drop/1, trie_intern/2, trie_property/2, trie_interned/2 from intern.
-:- import incr_assert/1, incr_retractall/1, incr_assert_inval/1 from increval.
+:- import incr_assert/1, incr_retractall/1 from increval.
 :- import prepare/1 from gensym.
 
 :- dynamic abds/1, intv/1.
@@ -431,7 +431,7 @@ act_assert(_).
 act_update(F_,Ht) :-
 	collectPrefsArt(F_,_,F,Arg),
 	Fluent =.. [F,I,I,Ht|Arg],
-	incr_assert_inval_IfNot(Fluent).
+	incr_assert_once(Fluent).
 	
 
 test_abducible(not G,H) :- !,

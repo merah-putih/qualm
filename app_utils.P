@@ -1,5 +1,5 @@
 :- import memberchk/2, length/2, append/3, comma_to_list/2 from basics.
-:- import incr_assert/1, incr_assert_inval/1 from increval.
+:- import incr_assert/1 from increval.
 :- import term_to_atom/2 from string.
 :- import gensym/2 from gensym.
 
@@ -29,8 +29,8 @@ collectPrefsArt(F,Arity,H,T) :-
 assertIfNot(G) :- G, !.
 assertIfNot(G) :- my_assert(G).
 
-incr_assert_inval_IfNot(G) :- G, !.
-incr_assert_inval_IfNot(G) :- incr_assert_inval(G).
+incr_assert_once(G) :- G, !.
+incr_assert_once(G) :- incr_assert(G).
 
 is_abducible(G) :-
 	functor(G,N,A),
