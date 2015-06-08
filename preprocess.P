@@ -11,33 +11,45 @@
 
 :- dynamic rule/2, rule/3, ruleAs/2, lits/1, ruleNames/4, ruleId/3, hasRules/2, hasAssertRules/2, has_facts/2, hasFacts/2, inBody/1.
 
-:- dynamic hasClauses/2.
+:- dynamic hasClauses/2. %flag for having rules with 'not make_not' in the body.
 
+%==============================================================
+% preprocessClauses(F,ProF) pre-processes the source program in F
+% to transform it into rules with 'not make_not' and 'make' in their bodies.
 preprocessClauses(File,ProFile) :-
 	seeAbFile(File),
-	tellProFile(File,ProFile),
+	tellPabFile(File,ProFile),
 	processC,
-	(intv(L) -> processI(L); true),
-	%(intv(L),processI(L,I),writeI(I); true),
+	(intv(L) -> processI(L); true), %pre-process only if there is intv/1
 	seen,
 	told.
 
+%==============================================================
+%seeAbFile(F) opens for reading file F.ab
 seeAbFile(FileName) :-
 	append(FileName,".ab",FExt),
 	name(F,FExt),
 	see(F).
 
-tellProFile(FileName,ProF) :-
+%==============================================================
+% tellPabFile(F,ProF) opens for writing to file F.pab
+tellPabFile(FileName,ProF) :-
 	append(FileName,".pab",FExt),
 	name(ProF,FExt),
 	tell(ProF).
 
+%==============================================================
+% processC reads and pre-process each line in the source program 
 processC :-
 	read(C), 
 	( C = end_of_file -> true; 
 	processPred(C), processC
 	). 
 
+%==============================================================
+% processI(L) creates rules for each member I of intv(L):
+% I <- not make_not(I). %only for I without rules in the source program.
+% I <- make(I).
 processI(L) :-
 	member(N/A,L),
 	functor(I,N,A),
@@ -48,75 +60,68 @@ processI(L) :-
 	fail.
 processI(_).
 
-
-%abducibles
+%==============================================================
+%processPred(C): pre-process each clause C in the source program
 processPred(abds(L)) :- !,
 	write(abds(L)), write('.'), nl, my_assert(abds(L)).
+
 processPred(intv(L)) :- !,
 	write(intv(L)), write('.'), nl, my_assert(intv(L)).
 
-%change abducibles to consider form
+%process the Prolog part (within beginProlog and endProlog)
+processPred(beginProlog) :- !,
+	tell('prologAuxCode.P'),
+	processProlog.
+
+
 processPred((H <- B)) :- !,
-	collectPrefsArt(H,Art,ProH,_),
+	functor(H,ProH,Art),
 	assertIfNot(hasClauses(ProH,Art)),
-	processRuleAbdsIntv(H,B). 
+	processRuleIntv(H,B). %add 'not make_not(H)' in the body, if applicable
 
-processPred(( <- B)) :- !, processICAbds(B). 
+processPred(( <- B)) :- !, processIC(B). %add 'false' in the head
 
-%others
 processPred(C) :-
-	collectPrefsArt(C,Art,ProC,_),
+	functor(C,ProC,Art),
 	assertIfNot(hasClauses(ProC,Art)),
 	write(C),
 	intv_to_make(C,C1),
-	(C1 = [] -> write('.');
-	 (write(' <- '), write_list(C1))
+	(C1 = [] -> write('.');%C is not in intv/1
+	 (write(' <- '), write_list(C1)) %C is in intv/1
 	),
 	nl.
-
-processRuleAbdsIntv(H,B) :- 
+%==============================================================
+%processRuleIntv(H,B) adds to B 'not make_not(H)' if H is in intv/1
+processRuleIntv(H,B) :- 
 	comma_to_list(B,L),
-	abd_to_consider(L,L1),
 	intv_to_make(H,H1),
-	append(H1,L1,B1),
+	append(H1,L,B1),
 	write(H), write(' <- '), write_list(B1), nl. 
 
-processICAbds(B) :- 
+%==============================================================
+%processIC(B) adds false as the head of '<- B'
+processIC(B) :- 
 	comma_to_list(B, L), 
-	%abd_to_consider(L, L1),
-	write('<- '), write_list(L), nl. 
+	write(false), write('<- '), write_list(L), nl. 
 
 
-%This predicate is to change the abducible predicates, e.g. A, in the body of any rule
-%to consider(A).
-
-
-abd_to_consider([], []). 
-abd_to_consider([not X|Xs], [not CX|L]) :- 
-	is_abducible(X), !, 
-	CX =.. [consider|[X]], 
-	abd_to_consider(Xs, L). 
-abd_to_consider([X|Xs], [CX|L]) :-
-	is_abducible(X), !, 
-	CX =.. [consider|[X]], 
-	abd_to_consider(Xs, L). 
-abd_to_consider([X|Xs], [X|L]) :- 
-	abd_to_consider(Xs, L). 
-
-%%%%
+%==============================================================
+%intv_to_make(P,L) constructs 'not make_not(P)' if P is in intv/1
 
 intv_to_make(X,[not make_not(X)]) :- 
 	is_interventable(X), !.
 intv_to_make(_,[]).
 
-%%%%
 
+%==============================================================
+%loadPro(File) loads pre-processed File (PENDING COMMENT)
 loadPro(ProFile) :-
 	see(ProFile),
 	loadClauses,
 	processClauses,
 	seen.
 
+%==============================================================
 loadClauses :-
     read(C),
     ( C = end_of_file -> verifyLoadedClauses;
@@ -138,43 +143,21 @@ addRuleId((H <- B)) :- !,
 	makeFact(RuleId).
 addRuleId(_).
 
-
+%==============================================================
+% loadClause(C) loads each clause C from the pre-processed file.
 loadClause(abds(_)) :- !.
 loadClause(intv(_)) :- !.
-loadClause(beginProlog) :- !,
-	tell('prologAuxCode.P'),
-	processProlog.
 
-% ICs
-loadClause(( <- B)) :- !,
-	loadClause((false <- B)).
-
-% Rules with 'assert/1' in the head
-loadClause((assert(F) <- B)) :- !,
-	loadInClause(F,ProF),
-	makeRule(assert(ProF),B,RuleName),       
-	makeRuleAs(ProF),
-	assertIfNot(ruleId(assert(F),B,RuleName)).
-
-% Rules
 loadClause((H <- B)) :- !,
 	makeRule(H,B,RuleName),
 	assertIfNot(ruleId(H,B,RuleName)).
 
-% Facts
 loadClause(H) :- !,
 	makeFact(H).
 
-loadInClause(assert(In),assert(Out)) :- !,
-	loadInClause(In,Out).
-loadInClause((H <- B),'#(r)'(ProH,ProB)) :- !,
-	comma_to_list(B,ListB),
-	term_to_atom(H,ProH),
-	term_to_atom(ListB,ProB),
-	loadClause((H <- B)).
-loadInClause(F,F).
-
-
+%==============================================================
+%processProlog writes Prolog part (within beginProlog and endProlog)
+%without any changes.
 processProlog :-
 	read(C),
 	( C = end_of_file ->

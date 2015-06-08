@@ -16,7 +16,7 @@
 :- dynamic make/4, not_make/4 as incremental.
 :- dynamic make_not/4, not_make_not/4 as incremental.
 
-:- dynamic current/1.
+:- dynamic current/1. %current timestamp.
 
 :- dynamic qt/1 as incremental.
 :- dynamic upper/1 as incremental.
@@ -120,46 +120,38 @@ incr_retractall_rules([P/A|Ps],XtrArg) :-
 clean_trie :-
 	trie_drop(dual), !; true.
 
-%%%%
 
+%==============================================================
+%newNumberOfUpdate(N) sets current time to N+1, initially N=1
+%when the source program is inserted.
 newNumberOfUpdate(1) :-
         \+ current(_),
-%	assert(current(1)).
 	assert(current(2)).
 newNumberOfUpdate(C) :-
         retract(current(C)), C1 is C+1, assert(current(C1)).
 
-% move one time ahead
+%==============================================================
+% uptime/0 moves the current time one step ahead
 uptime :-
 	newNumberOfUpdate(_).
 
-% jump to time Qt, and make Qt current time
+%==============================================================
+% uptime(Qt) sets current time to Qt
 uptime(Qt) :-
 	retract(current(_)),
 	assert(current(Qt)).
 
 
-%%%%
-
-consultQ(File) :-
-	consultQualm(File),
-	%[tab],
-	newNumberOfUpdate(_),
-	upper_time(20).
-
+%==============================================================
+% consultQualm(File) consults the source program in File, pre-
+% processes it wrt. intervention (and writes the result into ProFile),
+% and loads ProFile into Prolog database and 
 consultQualm(File) :-
-	clean,
-	%[consider],
+	clean, %clean the databse before consulting new File
 	preprocessClauses(File,ProFile),
-	loadPro(ProFile).
-	%tell('prologAuxCode.P'),
-	%loadClauses,
-	%processClauses,
-	%processQualmClauses,
-	%prepareDualTrie,
-	%assert(current(2)),
-	%told,
-	%ensure_loaded('prologAuxCode.P').
+	loadPro(ProFile),
+	newNumberOfUpdate(_). %set current time into the next timestamp
+
 
 %%%%
 

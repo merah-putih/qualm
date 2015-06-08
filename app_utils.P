@@ -7,25 +7,16 @@
 :- op(1110,fy, '<-' ).         % Rule symbol
 
 
-collectPrefsArt(not(F),A,G_,Args) :- !,
-	collectPrefsArt(F,A,G,Args),
-	atom_concat('not_',G,G_).
+collectPrefsArt(not(F),Arity,NotFunc,Args) :- !,
+	collectPrefsArt(F,Arity,Func,Args),
+	atom_concat('not_',Func,NotFunc).
 
-collectPrefsArt(assert(F),A,H,Args) :- !,
-	collectPrefsArt(F,A,G,Args),
-	G_ =.. [assert,G],
-	term_to_atom(G_,H).
+collectPrefsArt(F,Arity,Func,Args) :-
+	F =.. [Func|Args],
+	functor(F,Func,Arity).
 
-collectPrefsArt((H <- B),2,'#(r)',[ProH,ProB]) :- !,
-	comma_to_list(B,ListB),
-	term_to_atom(H,ProH),
-	term_to_atom(ListB,ProB).
-
-
-collectPrefsArt(F,Arity,H,T) :-
-	F =.. [H|T],
-	length(T,Arity).
-
+%==============================================================
+% assertIfNot(G) asserts G only if G has not been asserted
 assertIfNot(G) :- G, !.
 assertIfNot(G) :- my_assert(G).
 
