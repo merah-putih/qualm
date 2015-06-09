@@ -9,9 +9,22 @@
 :- import comma_to_list/2, memberchk/2, append/3, member/2 from basics.
 :- import term_to_atom/2 from string.
 
-:- dynamic rule/2, rule/3, ruleAs/2, lits/1, ruleNames/4, ruleId/3, hasRules/2, hasAssertRules/2, has_facts/2, hasFacts/2, inBody/1.
+% rule(Head,Body) and rule(RuleNr,Head,Body) are data structures to represent
+% rules. RuleNr gives a number to a rule wrt. its occurrence (top to bottom)
+:- dynamic rule/2, rule/3.
 
-:- dynamic hasClauses/2. %flag for having rules with 'not make_not' in the body.
+% lits(ListFluents) lists all fluents that can be incrementally updated in ListFluents
+:- dynamic lits/1.
+
+% flag ruleNames(N,N_ab,not_N,N_st) prepares various rule names
+% needed in the transformation.
+:- dynamic ruleNames/4.
+
+% flag inBody(L) indicating that atom L is in the body of a rule
+:- dynamic inBody/1. 
+
+% flag hasRules(Pred,Arity) indicating that Pred/Arity has rules
+:- dynamic hasRules/2. 
 
 %==============================================================
 % preprocessClauses(F,ProF) pre-processes the source program in F
@@ -53,7 +66,7 @@ processC :-
 processI(L) :-
 	member(N/A,L),
 	functor(I,N,A),
-	(retract(hasClauses(N,A)) -> true;
+	(retract(hasRules(N,A)) -> true;
 	 write(I), write(' <- '), write_list([not make_not(I)]), nl
 	),
 	write(I), write(' <- '), write_list([make(I)]), nl,
@@ -76,14 +89,14 @@ processPred(beginProlog) :- !,
 
 processPred((H <- B)) :- !,
 	functor(H,ProH,Art),
-	assertIfNot(hasClauses(ProH,Art)),
+	assertHasRules(ProH,Art),
 	processRuleIntv(H,B). %add 'not make_not(H)' in the body, if applicable
 
 processPred(( <- B)) :- !, processIC(B). %add 'false' in the head
 
 processPred(C) :-
 	functor(C,ProC,Art),
-	assertIfNot(hasClauses(ProC,Art)),
+	assertHasRules(ProC,Art),
 	write(C),
 	intv_to_make(C,C1),
 	(C1 = [] -> write('.');%C is not in intv/1
@@ -122,10 +135,11 @@ loadPro(ProFile) :-
 	seen.
 
 %==============================================================
+% loadClauses loads each clause in the pre-processed file
 loadClauses :-
     read(C),
-    ( C = end_of_file -> verifyLoadedClauses;
-      ( loadClause(C), addRuleId(C), loadClauses ) ).
+    ( C = end_of_file -> true;
+      ( loadClause(C), loadClauses ) ).
 
 verifyLoadedClauses :-
 	retract(has_facts(F,A)),
@@ -149,11 +163,18 @@ loadClause(abds(_)) :- !.
 loadClause(intv(_)) :- !.
 
 loadClause((H <- B)) :- !,
-	makeRule(H,B,RuleName),
-	assertIfNot(ruleId(H,B,RuleName)).
+	addToFluents(Head,G,Art,Args),
+	assertHasRules(G,Art),	
+	comma_to_list(B,ListB),
+	term_to_atom([Head,ListB],[ProHead,ProB]),
+	loadBody(B,LoadedB),
+	assertRuleNames(G),
+	my_assert(rule(Head,[('#(r)',[ProHead,ProB],Hr)|LoadedB])).
 
-loadClause(H) :- !,
-	makeFact(H).
+loadClause(H) :-
+	addToFluents(Head,G,Art,Args),
+	assertHasRules(G,Art),
+	my_assert(rule(Head,[])).	
 
 %==============================================================
 %processProlog writes Prolog part (within beginProlog and endProlog)
@@ -174,41 +195,22 @@ makeFact(Head) :-
 	Gluent =.. [G|Args],
 	my_assert(rule(Gluent,[])).	
 
-makeRule(Head,B,[ProHead,ProB]) :-
-	addToFluents(Head,G,Art,Args),
-	assertHasRules(G,Art),	
-	Gluent =.. [G|Args],
-	comma_to_list(B,ListB),
-	term_to_atom(Head,ProHead),
-	term_to_atom(ListB,ProB),
-	loadBody(B,LoadedB),
-	assertRuleNames(G),
-	(rule(Gluent,[('#(r)',[ProHead,ProB],Hr)|LoadedB]) -> true;
-	my_assert(rule(Gluent,[('#(r)',[ProHead,ProB],Hr)|LoadedB]))).
 
-makeRuleAs(assert(F)) :- !,
-	addToFluents(assert(F),G,Art,Args),
-	assertHasAssertRules(G,Art),		
-	Gluent =.. [G,H|Args],
-	(ruleAs(Gluent,[(assert(G),Args,Ha), H is Ha+1]) -> true;
-	my_assert(ruleAs(Gluent,[(assert(G),Args,Ha), H is Ha+1]))),
-	makeRuleAs(F).
-
-makeRuleAs(F) :-
-	addToFluents(F,G,Art,Args),
-	assertHasAssertRules(G,Art),	
-	Gluent =.. [G,H|Args],
-	(ruleAs(Gluent,[(assert(G),Args,Ha), H is Ha+1]) -> true;
-	my_assert(ruleAs(Gluent,[(assert(G),Args,Ha), H is Ha+1]))).
-
-addToFluents(consider(A),consider,1,[A]) :- !.
+%==============================================================
+% addToFluents(Lit,Pred,Arity,Args) adds to the list of fluents
+% lits/1 the fluent predicate of Lit with its Arity, via
+% the auxiliary predicate addToFluents/3.
 addToFluents(H,G,Art,Args) :-
 	collectPrefsArt(H,Art,G,Args),
 	lits(Fs),
 	(atom_concat('not_',Pref,G) -> true; Pref=G),
 	addToFluents(Pref,Art,Fs).
 
-
+%==============================================================
+%addToFluent(Pred,Arity,LFluentPred) adds to the list of fluent
+%LFluentPred the fluent predicate Pred/Arity, if not added yet.
+%It also declared both Pred and its negation complement accordingly
+%as dynamic incremental.
 addToFluents(Pref,Art,Fs) :-
 	memberchk(Pref/Art,Fs), !.
 addToFluents(Pref,Art,Fs) :-
@@ -218,23 +220,20 @@ addToFluents(Pref,Art,Fs) :-
 	my_incr_dyn(Pref_,Art),
 	my_assert(lits([Pref/Art|Fs])).
 
-
-loadBody((true,B),NA) :- !,
-	loadBody(B,NA).
+%==============================================================
+%loadBody(Body,ListBody) formats each literal L in Body into:
+% (Predicate_L,Arguments_L,TS_Placeholder) and stores it in
+% ListBody.
 loadBody((prolog(P),B),[(prolog(P),_,_)|NA]) :- !,
 	loadBody(B,NA).
-%loadBody((prolog(P),B),[prolog(P)|NA]) :- !,
-%	loadBody(B,NA).
 loadBody(((not A),B),[(not PrefA,Args,_)|Rs]) :- !,
-	assertInBody(A),
-	addToFluents(A,PrefA,_,Args), 
+	assertInBody(A), %sets the flag inBody(A) that A is in a body of a rule
+	addToFluents(A,PrefA,_,Args), %adds A into list of fluents 'lits'.
 	loadBody(B,Rs).
 loadBody((A,B),[(PrefA,Args,_)|Rs]) :- !,
 	assertInBody(A),
 	addToFluents(A,PrefA,_,Args), 
 	loadBody(B,Rs).
-loadBody(true,[]) :- !.
-%loadBody(prolog(P),[prolog(P)]) :- !.
 loadBody(prolog(P),[(prolog(P),_,_)]) :- !.
 loadBody((not A),[(not PrefA,Args,_)]) :- !,
 	assertInBody(A),
@@ -243,6 +242,9 @@ loadBody(A,[(PrefA,Args,_)]) :-
 	assertInBody(A),
 	addToFluents(A,PrefA,_,Args).
 
+%==============================================================
+%assertHasRules(Pred,Arity) asserts hasRules(Pred,Arity), if
+%not asserted yet
 assertHasRules(H,A) :-
 	assertIfNot(hasRules(H,A)).
 
@@ -250,17 +252,21 @@ assertHasAssertRules(H,A) :-
 	assertIfNot(hasAssertRules(H,A)).
 
 
-assertInBody(consider(_)) :- !.
-assertInBody(make(_)) :- !.
-assertInBody(make_not(_)) :- !.
+%==============================================================
+% assertInBody(H) asserts flag inBody(HH), if not yet asserted,
+% where HH is the template of H.
 assertInBody(H) :-
-	assertIfNot(inBody(H)).
+	one_template(H,HH),
+	assertIfNot(inBody(HH)).
 
 assertHasFacts(H,A) :-
 	assertIfNot(has_facts(H,A)).
 
+%==============================================================
+%assertRuleNames(N) asserts flag ruleNames(N,N_ab,not_N,N_st)
+%to facilitate the construction of rules with those names.
 assertRuleNames(N) :-
-	(atom_concat('not_',Pos,N) -> NegN = Pos; renamePred("not_",N,[],NegN)),
+	renamePred("not_",N,[],NegN),
 	renamePred([],N,"_ab",N_ab),
 	renamePred([],N,"_st",N_st),
 	assertIfNot(ruleNames(N,N_ab,NegN,N_st)).

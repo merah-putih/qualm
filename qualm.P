@@ -13,8 +13,7 @@
 :- dynamic expect/4, not_expect/4 as incremental.
 :- dynamic expect_not/4, not_expect_not/4 as incremental.
 :- dynamic false/3, not_false/3 as incremental.
-:- dynamic make/4, not_make/4 as incremental.
-:- dynamic make_not/4, not_make_not/4 as incremental.
+
 
 :- dynamic current/1. %current timestamp.
 

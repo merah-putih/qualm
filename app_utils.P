@@ -23,6 +23,13 @@ assertIfNot(G) :- my_assert(G).
 incr_assert_once(G) :- G, !.
 incr_assert_once(G) :- incr_assert(G).
 
+
+%==============================================================
+% one_template(G,TG) creates the template TG of literal G.
+one_template(G,TG) :-
+	functor(G,N,A),
+	functor(TG,N,A).
+
 is_abducible(G) :-
 	functor(G,N,A),
 	get_sol(abds(L),L), memberchk(N/A,L).
@@ -48,10 +55,9 @@ my_assert(C) :- assert(C).
 
 my_incr_assert(C) :- incr_assert(C).
 
-my_incr_dyn(L) :-
-	functor(L,P,A),
-	(dynamic P/A as incremental).
-
+%==============================================================
+%my_incr_dyn(Pred,Arity) declares Pred/(Arity+3) as dynamic
+%incremental. The three extra parameters are for I, O, and timestamp T.
 my_incr_dyn(H,A) :-
 	ProA is A+3,
 	(dynamic H/ProA as incremental).
