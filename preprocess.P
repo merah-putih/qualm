@@ -127,15 +127,17 @@ intv_to_make(_,[]).
 
 
 %==============================================================
-%loadPro(File) loads pre-processed File (PENDING COMMENT)
+%loadPro(File) loads the transformation of pre-processed File
+% into the Prolog database.
 loadPro(ProFile) :-
 	see(ProFile),
-	loadClauses,
-	processClauses,
+	loadClauses, %prepares each clause for loading to the database
+	processClauses, %transform each clause and loads it to the database
 	seen.
 
 %==============================================================
-% loadClauses loads each clause in the pre-processed file
+% loadClauses reads each clause in the pre-processed file,
+% and prepares it for its loading to the database. 
 loadClauses :-
     read(C),
     ( C = end_of_file -> true;
@@ -271,130 +273,84 @@ assertRuleNames(N) :-
 	renamePred([],N,"_st",N_st),
 	assertIfNot(ruleNames(N,N_ab,NegN,N_st)).
 
-%%%%
+%==============================================================
+%processClauses/0
 
 processClauses :-
-	process_init,
 	process_FailRules,
-	%process_UndefRules,
 	process_Abds,
-	%process_FailRules,
-	process_Facts,
-	tellXFile("tab"),
+	tell('tabledAbCode.P'), %tabledAbCode.P will only contain rules '_ab'
 	writeTableDecls, nl,
 	process_Rules,
 	told,
 	process_AssertedRules.
 
-process_init :-
-	process_init(make(_),0),
-	process_init(make_not(_),0),
-	process_init(upd_abd(_),0).
-
-process_init(C,Start) :-
-	collectPrefsArt(C,Art,PredName,_),
-	makeList(Art,Args),
-	processLit(not(PredName),Args,I,I,Start,PL),
-	my_incr_assert(PL).	
-
-
-
+%==============================================================
+%process_FailRules adds to the database not_L(I,I,1,...) for
+%atom L appearing in the body of a rule, but without any rule
+%in the source program. The timstamp is 1 meaning it is added
+%at the same time the program is inserted.
 process_FailRules :-
 	retract(inBody(L)),
 	hasNoRules(L,Art,PredName),
-	makeList(Art,Args),
+	functor(PredName,Art,PredTempl),
+	PredTempl =.. [PredName|Args],
 	processLit(not(PredName),Args,I,I,1,PL),
 	my_incr_assert(PL),
 	fail.
 process_FailRules.
 
 
-assert_FailRules(false,PL) :- !,
-	my_assert(PL).
-assert_FailRules(_,PL) :-
-	my_incr_assert(PL).
-
-process_UndefRules :-
-	retract(inBody(H)), 
-	hasNoRules(H,A,L),
-	makeList(A,Args),
-	processLit(L,Args,I,I,1,PL),
-	my_incr_assert((PL :- undef)),
-	processLit(not(L),Args,I,I,1,NPL),
-	my_incr_assert((NPL :- undef)),
-	fail.
-process_UndefRules.
 
 
+%==============================================================
+%hasNoRules(Lit,Arity,Pred) checks if Lit has no rules in the
+%source program and returns its predicate name Pred and its Arity.
 hasNoRules(H,A,L) :-
 	collectPrefsArt(H,A,L,_),
-	\+ hasDefRules(L,A),
-	%\+ hasDefAsRules(L,A),
-	\+ hasDefFacts(L,A),
-	\+ is_abducible(H).
+	\+ hasRules(L,A), %no rules for L/A
+	\+ is_abducible(H). %H is not an abducible
 
-hasDefRules(L,A) :-
-	atom_compl(L,L_),
-	(hasRules(L,A);hasRules(L_,A)).
-
-hasDefAsRules(L,A) :-
-	atom_compl(L,L_),
-	(hasAssertRules(L,A);hasAssertRules(L_,A)).
-
-hasDefFacts(L,A) :-
-	atom_compl(L,L_),
-	(hasFacts(L,A);hasFacts(L_,A)).
-
+%==============================================================
+%process_Abds/0 processes each abducible into a rule to insert it
+%to the abductive context
 process_Abds :-
 	get_sol(abds(LAb),LAb),
 	process_AbdRules(LAb).
 
+%process_AbdRules(ListAbd) process each abducible A in ListAbd into
+%a rule that insert A into the abductive context.
 process_AbdRules([]).
-process_AbdRules([N/A|L]) :-
-	functor(Ab,N,A),
-	Ab =.. [AbAtom|AbArgs],
-	renamePred("not_",AbAtom,[],Not_AbAtom),
-	AbH =.. [AbAtom,I,O,H|AbArgs],
-	AbHNeg =.. [Not_AbAtom,I,O,H|AbArgs],
-	TimedAb =.. [AbAtom,H|AbArgs],
-	my_assert((AbH :- insert(TimedAb,I,O))),
-	my_assert((AbHNeg :- insert(not(TimedAb),I,O))),
+process_AbdRules([AbPred/A|L]) :-
+	functor(Ab,AbPred,A),
+	Ab =.. [AbPred|AbArgs],
+	renamePred("not_",AbPred,[],Not_AbPred),
+	AbH =.. [AbPred,I,O,H|AbArgs],
+	AbHNeg =.. [Not_AbPred,I,O,H|AbArgs],
+	my_incr_assert((AbH :- insert(Ab,I,O))),
+	my_incr_assert((AbHNeg :- insert(not(Ab),I,O))),
 	process_AbdRules(L).
 
-/*
-processAbd(not(H),I,O,ProNotH) :- !,
-	H =.. [NameH|ArgsH],
-	renamePred("not_",NameH,[],Not_H),
-	ProNotH =.. [Not_H,I,O|ArgsH].
-processAbd(H,I,O,ProH) :-
-	H =.. [NameH|ArgsH],
-	ProH =.. [NameH,I,O|ArgsH].
-*/
+%==============================================================
+%writeTableDecls/0 writes the declaration of tabled '_ab' predicates to
+%the file tabledAbCode.P
+writeTableDecls :-
+	findTabledPred(Ps),
+	writeTabledDecl(Ps).
 
-process_Facts :-
-	retract(hasFacts(H,A)),
-	find_facts(H,A,R),
-	processFacts(R),
-	processNegFact(H,A),
-	fail.
-process_Facts.
+findTabledPred(Ps) :-
+	findall(Sig,findTPred(Sig),Ps).
 
-find_facts(H,A,R) :-
-	functor(Head,H,A),
-	findall(fact(Head,1),clause(rule(Head,[]),true),R).
+findTPred(N_ab/NewA) :-
+	hasRules(N,A),
+	ruleNames(N,N_ab,_,_),
+	NewA is A+2. %two additional parameters: abductive entry and timestamp.
 
-processFacts([]).
-processFacts([fact(H,TS)|Fs]) :-
-	H =.. [Head|Args],
-	processAtom(Head,Args,I,I,TS,ProH),
-	my_incr_assert(ProH),
-	processFacts(Fs).
+writeTabledDecl([]).
+writeTabledDecl([P|Ps]) :-
+	write(':- table '), write(P), write(' as incremental.'), nl,
+	writeTabledDecl(Ps).
 
-processNegFact(H,A) :-
-	makeList(A,Args),
-	processLit(not(H),Args,_,_,_,ProH),
-	processAtom(H,Args,_,_,_,ProB),
-	my_assert((ProH :- \+ ProB)).
 
 process_Rules :-
 	retract(hasRules(H,A)),
@@ -406,48 +362,6 @@ process_Rules :-
 	process_Rules.
 process_Rules.
 
-
-
-tellXFile(FileName) :-
-	append(FileName,".P",FExt),
-	name(ProF,FExt),
-	tell(ProF).
-
-writeTableDecls :-
-	findTabledPred(Ps),
-	writeTabledDecl(Ps).
-
-
-findTabledPred(Ps) :-
-	findall(Sig,findTPred(Sig),Ps).
-
-hasNegRule(H) :- negGoal(H), hasRules(H).
-
-findTPred(Sig) :-
-	hasRules(N,A),
-	ruleNames(N,N_ab,_,_),
-	signature(N_ab,A,2,Sig).
-
-% signature/4:
-% N/NewA is the signature of the tabled predicate N.
-
-signature(N,A,P,N/NewA) :-
-	NewA is A+P.
-
-writeTabledDecl([]).
-writeTabledDecl([P|Ps]) :-
-	write(':- table '), write(P), write(' as incremental.'), nl,
-%	writeL([':- table ', P, ' as incremental.']),
-	writeTabledDecl(Ps).
-
-
-	
-
-/*
-find_rules(H,A,R) :-
-	functor(Head,H,A),
-	findall(rule(Head,Body),clause(rule(Head,Body),true),R).
-*/
 
 find_rules(H,A,R) :-
 	functor(Head,H,A),

@@ -62,7 +62,7 @@ clean :-
 	incr_retractall(upper(_)),
 	incr_assert(upper(0)),
 	assert(lits([false/0,'#(r)'/2, expect/1, expect_not/1, make/1, make_not/1, upd_abd/1])),
-	%assert(inBody(false)),
+	incr_assert(inBody(false)),
 	prepare(0),
 	clean_trie,
 	trie_create(_,[type(prge),alias(dual)]).
