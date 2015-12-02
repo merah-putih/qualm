@@ -1,3 +1,5 @@
+:- catch(consult:add_this_lib_dir,_,true). % in recent XSBs, adds this file's directory to library_directory/1
+
 :- consult(preprocess).
 
 :- import member/2,length/2 from basics.
@@ -142,8 +144,8 @@ uptime(Qt) :-
 %%%%
 
 consultQ(File) :-
-	consultQualm(File),
-	%[tab],
+	\+ \+ consultQualm(File),
+	[tab],
 	newNumberOfUpdate(_),
 	upper_time(20).
 
