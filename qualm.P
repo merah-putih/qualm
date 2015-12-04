@@ -2,9 +2,9 @@
 
 :- consult(preprocess).
 
-:- import member/2,length/2 from basics.
+:- import member/2 from basics.
 :- import trie_create/2, trie_drop/1, trie_intern/2, trie_property/2, trie_interned/2 from intern.
-:- import incr_assert/1, incr_retractall/1, incr_assert_inval/1 from increval.
+:- import incr_assert/1, incr_retractall/1 from increval.
 :- import prepare/1 from gensym.
 
 :- dynamic abds/1, intv/1.
@@ -149,7 +149,12 @@ consultQ(File) :-
 	newNumberOfUpdate(_),
 	upper_time(20).
 
+consultQualm(File) :- atom(File), !,
+	atom_codes(File,Codes),
+	consultQualm(Codes).
+	
 consultQualm(File) :-
+	is_list(File),
 	clean,
 	%[consider],
 	preprocessClauses(File,ProFile),

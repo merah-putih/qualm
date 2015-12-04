@@ -1,5 +1,3 @@
-:- import variant/2 from subsumes.
-
 writeL([]) :- nl.
 writeL([H|L]) :- write(H), writeL(L).
 
