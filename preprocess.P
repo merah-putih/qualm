@@ -22,8 +22,9 @@ preprocessClauses(File,ProFile) :-
 	seen,
 	told.
 
+% seeAbFile(FileName) With or without file extension
 seeAbFile(FileName) :-
-	append(FileName,".ab",FExt),
+	(append(_,".ab",FileName) -> FExt=FileName ; append(FileName,".ab",FExt)),
 	name(F,FExt),
 	see(F).
 
