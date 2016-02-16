@@ -132,7 +132,7 @@ intv_to_make(_,[]).
 loadPro(ProFile) :-
 	see(ProFile),
 	loadClauses, %prepares each clause for loading to the database
-	processClauses, %transform each clause and loads it to the database
+	%processClauses, %transform each clause and loads it to the database
 	seen.
 
 %==============================================================
@@ -149,32 +149,25 @@ verifyLoadedClauses :-
 	fail.
 verifyLoadedClauses :- nl.
 
-addRuleId((<- B)) :- !,
-	retract(ruleId(false,B,[false,ProB])),
-	RuleId =.. ['#(r)',false,ProB],
-	makeFact(RuleId).
-addRuleId((H <- B)) :- !,
-	retract(ruleId(H,B,[ProH,ProB])),
-	RuleId =.. ['#(r)',ProH,ProB],
-	makeFact(RuleId).
-addRuleId(_).
 
 %==============================================================
 % loadClause(C) loads each clause C from the pre-processed file.
 loadClause(abds(_)) :- !.
 loadClause(intv(_)) :- !.
 
-loadClause((H <- B)) :- !,
-	addToFluents(Head,G,Art,Args),
+loadClause((Head <- B)) :- !,
+	addToFluents(Head,G,Art,_),
 	assertHasRules(G,Art),	
 	comma_to_list(B,ListB),
-	term_to_atom([Head,ListB],[ProHead,ProB]),
+        term_to_atom(Head,ProHead),
+	term_to_atom(ListB,ProB),
 	loadBody(B,LoadedB),
 	assertRuleNames(G),
-	my_assert(rule(Head,[('#(r)',[ProHead,ProB],Hr)|LoadedB])).
+	assertIfNot(rule(Head,[('#(r)',[ProHead,ProB],_)|LoadedB])),
+        assertIfNot(rule('#(r)'(ProHead,ProB),[])).
 
-loadClause(H) :-
-	addToFluents(Head,G,Art,Args),
+loadClause(Head) :-
+	addToFluents(Head,G,Art,_),
 	assertHasRules(G,Art),
 	my_assert(rule(Head,[])).	
 
@@ -274,7 +267,7 @@ assertRuleNames(N) :-
 	assertIfNot(ruleNames(N,N_ab,NegN,N_st)).
 
 %==============================================================
-%processClauses/0
+
 
 processClauses :-
 	process_FailRules,
@@ -351,6 +344,9 @@ writeTabledDecl([P|Ps]) :-
 	write(':- table '), write(P), write(' as incremental.'), nl,
 	writeTabledDecl(Ps).
 
+%==============================================================
+% process_Rules processes each rule of the following types:
+% - PENDING
 
 process_Rules :-
 	retract(hasRules(H,A)),

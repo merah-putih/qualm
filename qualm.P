@@ -12,6 +12,8 @@
 :- dynamic '#(r)'/5, 'not_#(r)'/5 as incremental.
 :- dynamic expect/4, not_expect/4 as incremental.
 :- dynamic expect_not/4, not_expect_not/4 as incremental.
+:- dynamic make/4, not_make/4 as incremental.
+:- dynamic make_not/4, not_make_not/4 as incremental.
 :- dynamic false/3, not_false/3 as incremental.
 
 
@@ -62,7 +64,7 @@ clean :-
 	incr_retractall(upper(_)),
 	incr_assert(upper(0)),
 	assert(lits([false/0,'#(r)'/2, expect/1, expect_not/1, make/1, make_not/1, upd_abd/1])),
-	incr_assert(inBody(false)),
+	assert(inBody(false)),
 	prepare(0),
 	clean_trie,
 	trie_create(_,[type(prge),alias(dual)]).
