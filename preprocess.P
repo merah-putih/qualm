@@ -112,10 +112,10 @@ intv_to_make(_,[]).
 
 %%%%
 
-loadPro(ProFile) :-
+loadPro(OriginalFile,ProFile,TabFile) :-
 	see(ProFile),
 	loadClauses,
-	processClauses,
+	processClauses(OriginalFile,TabFile),
 	seen.
 
 loadClauses :-
@@ -285,14 +285,16 @@ assertRuleNames(N) :-
 
 %%%%
 
-processClauses :-
+processClauses(OriginalFile,TabFile) :-
 	process_init,
 	process_FailRules,
 	process_UndefRules,
 	process_Abds,
 	%process_FailRules,
 	process_Facts,
-	tellXFile("tab"),
+	tellXFile(TabFile),
+	atom_codes(Original,OriginalFile),
+	write('/* Original file: '), write(Original), writeln(' */'),
 	writeTableDecls, nl,
 	process_Rules,
 	told,

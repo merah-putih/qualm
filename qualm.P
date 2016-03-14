@@ -2,10 +2,11 @@
 
 :- consult(preprocess).
 
-:- import member/2 from basics.
+:- import member/2, append/3 from basics.
 :- import trie_create/2, trie_drop/1, trie_intern/2, trie_property/2, trie_interned/2 from intern.
 :- import incr_assert/1, incr_retractall/1 from increval.
 :- import prepare/1 from gensym.
+:- import concat_atom/2 from string.		 
 
 :- dynamic abds/1, intv/1.
 :- dynamic pending/2.
@@ -143,22 +144,31 @@ uptime(Qt) :-
 
 %%%%
 
-consultQ(File) :-
-	\+ \+ consultQualm(File),
-	[tab],
+consultQ(BasedDir,File) :- 
+	concat_atom([BasedDir,File],TheFile),
+	consultQ(TheFile).
+
+consultQ(File) :- atom(File), !,
+	atom_codes(File,Codes),
+	consultQ(Codes).
+	
+consultQ(FileCodes) :-
+	append(FileCodes,"_tab",TargetFileCodes),
+	atom_codes(File,FileCodes),
+	write('Consulting QUALM file '), writeln(File),
+	\+ \+ consultQualm(FileCodes,TargetFileCodes),
+	atom_codes(Tab,TargetFileCodes),
+	[Tab],
 	newNumberOfUpdate(_),
 	upper_time(20).
 
-consultQualm(File) :- atom(File), !,
-	atom_codes(File,Codes),
-	consultQualm(Codes).
-	
-consultQualm(File) :-
-	is_list(File),
+
+consultQualm(FileCodes,TargetFileCodes) :-
+	is_list(FileCodes),
 	clean,
 	%[consider],
-	preprocessClauses(File,ProFile),
-	loadPro(ProFile).
+	preprocessClauses(FileCodes,ProFile),
+	loadPro(FileCodes,ProFile,TargetFileCodes).
 	%tell('prologAuxCode.P'),
 	%loadClauses,
 	%processClauses,

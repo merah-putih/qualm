@@ -1,0 +1,60 @@
+% Automation of QUALM tests
+
+:- import variant/2 from subsumes. 
+:- import conset/2, conget/2 from machine.
+
+assertTrue(G,_T,Answers) :- \+ is_list(Answers), !,
+	write('*** BAD test for'), writeln(G), 
+	write('Answers must be a list:'), writeln(Answers), 
+	fail.
+
+assertTrue(G,T,Answers) :-
+	conget('_test_count',N), NN is N+1,
+	conset('_test_count',NN),
+	findall(T,G,Found),
+	( variant(Answers,Found) -> true ;
+		write('*** FAILED test for '), writeln(G),
+		write('Expected: '), writeln(Answers),
+		write('Got: '), writeln(Found),
+		conget('_test_failures_count',F), FF is F+1,
+		conset('_test_failures_count',FF)
+	).
+
+assertTrue(G,Answers) :- assertTrue(G,G,Answers).
+assertTrue(G) :- assertTrue(G,none,[none]).
+
+beginTest :- 
+	writeln('STARTING test'), 
+	conset('_test_failures_count',0), conset('_test_count',0).
+
+endTest :- 
+	writeln('ENDED test.'), 
+	conget('_test_failures_count',F), conget('_test_count',N),
+	( F==0 -> 
+		write('SUCCESS :-) Passed '), write(N), writeln(' tests.')
+		;
+		write('Tests failed: '), writeln(F/N) ).
+
+test :- 
+	Base = '/Users/mc/git/qualm/examples/',
+	beginTest,
+	% Originally in qualm/examples/queries/q_forest:
+	consultQ(Base,'forest.ab'),
+	% originally:assertTrue( query((dry_leaves,forest_fire),O),O,[ [dry_leaves(1),storm(1)] * [] ]),
+	assertTrue( query((dry_leaves,forest_fire),O),O,[ [dry_leaves(1),dry_leaves(2),storm(1)] * [] ]),
+	assertTrue( updates([(dry_leaves,1),(storm,1)]) ),
+	assertTrue( query(forest_fire,O),O,[ [] * [] ]),
+	assertTrue( updates([make_not(dry_leaves)]) ),
+	assertTrue( query(forest_fire,O), [] ),
+	assertTrue( updates([not make_not(dry_leaves)]) ),
+	assertTrue( query(forest_fire,O), O, [ [] * [] ] ),
+	% Originally in qualm/examples/queries/q_forest2:
+	consultQ(Base,'forest2.ab'),
+	assertTrue( query((lightning,forest_fire),O),O,[ [barbecue(1),storm(1)] * [], [storm(1)] * [] ]),
+	assertTrue( updates([(storm,1),(not barbecue,1)]) ),
+	assertTrue( query(forest_fire,O), O , [ [] * [] ] ),
+	assertTrue( updates([make_not(lightning)]) ),
+	assertTrue( query(forest_fire,O), O , [] ),
+	assertTrue( updates([not make_not(lightning)]) ),
+	assertTrue( query(forest_fire,O), O , [ [] * [] ] ),
+	endTest.

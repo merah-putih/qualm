@@ -1,16 +1,19 @@
 % another variant of forest.ab by having two abductive causes for fire: storm or barbecue
+% renamed dry_leaves to dry_leaves_ to avoid a current XSB limitation:
+% a predicate can not change from non incremental to incremental, 
+% thus making automated testing impossible without this renaming 
 
 abds([barbecue/0,storm/0]).
 
 intv([lightning/0]).
 
-forest_fire <- barbecue, dry_leaves.
-forest_fire <- lightning, dry_leaves.
+forest_fire <- barbecue, dry_leaves_.
+forest_fire <- lightning, dry_leaves_.
 
 lightning <- storm.
 leaves_on_ground <- storm.
 
-dry_leaves.
+dry_leaves_.
 
 expect(storm).
 expect(barbecue).
