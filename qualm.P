@@ -155,7 +155,7 @@ consultQ(File) :- atom(File), !,
 consultQ(FileCodes) :-
 	append(FileCodes,"_tab",TargetFileCodes),
 	atom_codes(File,FileCodes),
-	write('Consulting QUALM file '), writeln(File),
+	nl, write('Consulting QUALM file '), writeln(File),
 	\+ \+ consultQualm(FileCodes,TargetFileCodes),
 	atom_codes(Tab,TargetFileCodes),
 	[Tab],

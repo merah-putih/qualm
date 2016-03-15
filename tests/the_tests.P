@@ -3,32 +3,37 @@
 :- import variant/2 from subsumes. 
 :- import conset/2, conget/2 from machine.
 
-assertTrue(G,_T,Answers) :- \+ is_list(Answers), !,
+% at(G,BindingsTerm,AnswersList) assert true that G has one answer for each element in AnswersList
+at(G,_T,Answers) :- \+ is_list(Answers), !,
 	write('*** BAD test for'), writeln(G), 
 	write('Answers must be a list:'), writeln(Answers), 
 	fail.
 
-assertTrue(G,T,Answers) :-
+at(G,T,Answers) :- at('',G,T,Answers).
+
+at(D,G,T,Answers) :-
 	conget('_test_count',N), NN is N+1,
 	conset('_test_count',NN),
 	findall(T,G,Found),
 	( variant(Answers,Found) -> true ;
-		write('*** FAILED test for '), writeln(G),
+		nl,write('*** FAILED test '), write(D), write(' '), write(NN), write(' for '), writeln(G),
 		write('Expected: '), writeln(Answers),
 		write('Got: '), writeln(Found),
 		conget('_test_failures_count',F), FF is F+1,
 		conset('_test_failures_count',FF)
 	).
 
-assertTrue(G,Answers) :- assertTrue(G,G,Answers).
-assertTrue(G) :- assertTrue(G,none,[none]).
+at(G,Answers) :- at(G,G,Answers).
+at(G) :- at(G,none,[none]).
 
 beginTest :- 
-	writeln('STARTING test'), 
+	writeln('----------------'),
+	writeln('STARTING test...'), 
 	conset('_test_failures_count',0), conset('_test_count',0).
 
 endTest :- 
-	writeln('ENDED test.'), 
+	writeln('---ENDED test.'), 
+	writeln('--------------'),
 	conget('_test_failures_count',F), conget('_test_count',N),
 	( F==0 -> 
 		write('SUCCESS :-) Passed '), write(N), writeln(' tests.')
@@ -38,23 +43,140 @@ endTest :-
 test :- 
 	Base = '/Users/mc/git/qualm/examples/',
 	beginTest,
-	% Originally in qualm/examples/queries/q_forest:
+	% From qualm/examples/queries/q_forest:
 	consultQ(Base,'forest.ab'),
-	% originally:assertTrue( query((dry_leaves,forest_fire),O),O,[ [dry_leaves(1),storm(1)] * [] ]),
-	assertTrue( query((dry_leaves,forest_fire),O),O,[ [dry_leaves(1),dry_leaves(2),storm(1)] * [] ]),
-	assertTrue( updates([(dry_leaves,1),(storm,1)]) ),
-	assertTrue( query(forest_fire,O),O,[ [] * [] ]),
-	assertTrue( updates([make_not(dry_leaves)]) ),
-	assertTrue( query(forest_fire,O), [] ),
-	assertTrue( updates([not make_not(dry_leaves)]) ),
-	assertTrue( query(forest_fire,O), O, [ [] * [] ] ),
-	% Originally in qualm/examples/queries/q_forest2:
+	at( query((dry_leaves,forest_fire),O),O,[ [dry_leaves(1),storm(1)] * [] ]), % failing
+	at( updates([(dry_leaves,1),(storm,1)]) ),
+	at( query(forest_fire,O),O,[ [] * [] ]),
+	at( updates([make_not(dry_leaves)]) ),
+	at( query(forest_fire,O), [] ),
+	at( updates([not make_not(dry_leaves)]) ),
+	at( query(forest_fire,O), O, [ [] * [] ] ),
+	% From qualm/examples/queries/q_forest2:
 	consultQ(Base,'forest2.ab'),
-	assertTrue( query((lightning,forest_fire),O),O,[ [barbecue(1),storm(1)] * [], [storm(1)] * [] ]),
-	assertTrue( updates([(storm,1),(not barbecue,1)]) ),
-	assertTrue( query(forest_fire,O), O , [ [] * [] ] ),
-	assertTrue( updates([make_not(lightning)]) ),
-	assertTrue( query(forest_fire,O), O , [] ),
-	assertTrue( updates([not make_not(lightning)]) ),
-	assertTrue( query(forest_fire,O), O , [ [] * [] ] ),
+	at( query((lightning,forest_fire),O),O,[ [storm(1)] * [] , [barbecue(1),storm(1)] * [] ]),
+	at( updates([(storm,1),(not barbecue,1)]) ),
+	at( query(forest_fire,O), O , [ [] * [] ] ),
+	at( updates([make_not(lightning)]) ),
+	at( query(forest_fire,O), O , [] ),
+	at( updates([not make_not(lightning)]) ),
+	at( query(forest_fire,O), O , [ [] * [] ] ),
+	% From qualm/examples/queries/q_pregnant:
+	consultQ(Base,'pregnant.ab'),
+	at( 'initial', query(fail_pregnant(X),O), X-O, [ sk1-[man(1,sk1)]*[], sk2-[woman(1,sk2)]*[] ]), % failing (returns vars)
+	at( updates([(man(sk1),1),(not woman(_),1)]) ),
+	at( 'just checking', query(fail_pregnant(X),O), X-O, [sk1-[]*[]]), % failing
+	at( updates([make_not(take_pill(sk1))]) ),
+	at( 'men are still fail to pregnant', query(fail_pregnant(X),O), X-O, [sk1-[]*[]]),
+	at( updates([(not man(_),1),(woman(sk2),1)]) ),
+	at( 'just checking , at end', query(fail_pregnant(X),O), X-O, [sk2-[]*[]]),
+	at( updates([make_not(take_pill(sk2))]) ),
+	at( 'women are *not* ...', query(fail_pregnant(X),O), X-O, []), % failing
+	% From qualm/examples/queries/q_tab:
+	consultQ(Base,'tab.ab'),
+	at(query((kill_civilian,end_war),O), O, [ [tactical_bombing(1)]*[] ]),
+	at( updates([(tactical_bombing,1)]) ),
+	at( query(end_war,O), O, [ []*[] ]),
+	at( updates([make_not(kill_civilian)]) ),
+	at( query(end_war,O), O, [ []*[] ]),
+	% From qualm/examples/queries/q_teb:
+	consultQ(Base,'teb.ab'),
+	at( query((kill_civilian,end_war),O), O, [[terror_bombing(1)] * []]),
+	at( updates([(terror_bombing,1)]) ),
+	at( query(end_war,O), O, [[] * []]),
+	at( updates([make_not(kill_civilian)]) ),
+	at( query(end_war,O), O, [] ),
+	% From qualm/examples/queries/q_th1a:
+	consultQ(Base,'th1a.ab'),
+	at( updates([
+		not '#(r)'( 'on_sidetrack(_h0)', '[on_bridge(_h0),consider(push(_h0))]' ),
+		not '#(r)'( 'fall(_h0)', '[not(make_not(fall(_h0))),consider(push(_h1)),lean(_h0,_h1)]' ) ])),
+	at( query(save_from(t),O), O, [[divert(1,t)] * []]),
+	at( query((hit(t,Obj),save_from(t)),O), Obj-O, [guy-[divert(1,t)] * []]),
+	at( updates([(divert(t),1)]) ),
+	at( query(save_from(t),O), O, [[] * []]),
+	at( updates([make_not(hit(t,guy))]) ),
+	at( query(save_from(t),O), O, [[] * []]),
+	at( updates([not make_not(hit(t,guy))]) ),
+	at( query(save_from(t),O), O, [[] * []]),
+	at( updates([not foggy]) ),
+	at( query(save_from(t),O), O, [[] * []]),
+	at( query((hit(t,Obj),save_from(t)),O), Obj-O, [guy-[]*[]]),
+	at( updates([make_not(hit(t,guy))]) ),
+	at( query(save_from(t),O), O, []),
+	at( updates([not make_not(hit(t,guy))]) ),
+	at( query(save_from(t),O), O, [[] * []]),
+	at( updates([not mini(t)]) ),
+	at( query(save_from(t),O), O, []),
+	at( updates([
+		'#(r)'( 'on_sidetrack(_h0)', '[on_bridge(_h0),consider(push(_h0))]'),
+		'#(r)'( 'fall(_h0)', '[not(make_not(fall(_h0))),consider(push(_h1)),lean(_h0,_h1)]' ) ])),
+	at( query(save_from(t),O), O, [[push(5,cargo)] * []]),
+	at( query((fall(P),save_from(t),person(P)),O), P-O, [heavier_guy-[push(5,cargo)] * []]),
+	at( updates([(push(cargo),5)]) ),
+	at( query(save_from(t),O), O, [[]*[]]),
+	at( updates([make_not(fall(heavier_guy))]) ),
+	at( query(save_from(t),O), O, [[] * []] ),
+	at( updates([not make_not(fall(heavier_guy))]) ),
+	at( query(save_from(t),O), O, [[] * []]),
+	% From qualm/examples/queries/q_th1b:
+	consultQ(Base,'th1b.ab'),
+	at( updates([
+		not '#(r)'( 'on_sidetrack(_h0)', '[on_bridge(_h0),consider(push(_h0))]' ),
+		not '#(r)'( 'on_sidetrack(_h0)', '[lean(_h0,_h1),consider(push(_h1))]' ) ]) ),
+	at( query(save_from(t),O), O, [[divert(1,t)] * []]),
+	at( query((hit(t,Obj),save_from(t)),O), Obj-O, [guy-[divert(1,t)] * []] ),
+	at( updates([(divert(t),1)]) ),
+	at( query(save_from(t),O), O, [[]*[]] ),
+	at( updates([make_not(hit(t,guy))]) ),
+	at( query(save_from(t),O), O, [[]*[]] ),
+	at( updates([not make_not(hit(t,guy))]) ),
+	at( query(save_from(t),O), O, [[]*[]]),
+	at( updates([not foggy]) ),
+	at( query(save_from(t),O), O, [[] * []]),
+	at( query((hit(t,Obj),save_from(t)),O), Obj-O, [guy-[] * []]),
+	at( updates([make_not(hit(t,guy))]) ),
+	at( query(save_from(t),O), O, [] ),
+	at( updates([not make_not(hit(t,guy))]) ),
+	at( query(save_from(t),O), O, [[]*[]] ),
+	at( updates([not mini(t)]) ),
+	at( query(save_from(t),O), []),
+	at( updates([
+		'#(r)'( 'on_sidetrack(_h0)', '[on_bridge(_h0),consider(push(_h0))]' ),
+		'#(r)'( 'on_sidetrack(_h0)', '[lean(_h0,_h1),consider(push(_h1))]' ) ]) ),
+	at( query(save_from(t),O), O, [[push(5,cargo)] * []]),
+	at( query((hit(t,Obj),save_from(t)),O), Obj-O, [cargo-[push(5,cargo)] * [],guy-[push(5,cargo)] * [], heavier_guy-[push(5,cargo)] * []]),
+	at( updates([(push(cargo),5)]) ),
+	at( query(save_from(t),O), O, [[] * []]),
+	at( updates([make_not(hit(t,heavier_guy))]) ),
+	at( query(save_from(t),O), O, []),
+	at( updates([not make_not(hit(t,heavier_guy))]) ),
+	at( updates([(push(heavier_guy),5)]) ),
+	at( current(T), T, [6]),
+	at( query(push(Obj),O), Obj-O, [cargo-[]*[], heavier_guy-[]*[]] ),
+	at( updates([make_not(push(heavier_guy))]) ),
+	at( query(hit(t,heavier_guy),O) , O, [[] * []] ),
+	at( updates([not make_not(push(heavier_guy))]) ),
+	at( updates([make_not(push(cargo))]) ),
+	at( query(hit(t,heavier_guy),O), []),
+	at( updates([not make_not(push(cargo))]) ),
+	% From qualm/examples/queries/q_trlcomb1:
+	consultQ(Base,'trlcomb1.ab'),
+	at( query((hit_man(left),save_five),Sol), Sol, [[divert(1,left)] * []]),
+	at( updates([(divert(left),1)]) ),
+	at( query(save_five,Sol), Sol, [[] * []]),
+	at( updates([make_not(hit_man(left))]) ),
+	at( query(save_five,Sol), Sol, [[] * []] ),
+	at( updates([not make_not(hit_man(left))]) ),
+	at( updates([man_on(right),expect(divert(right)),not expect_not(divert(right)), not divert(left)]) ),
+	at( query((hit_man(right),save_five),Sol), Sol, [[divert(2,right)] * []] ), % failing
+	at( updates([(divert(right),2)]) ),
+	at( query(save_five,Sol), Sol, [[]*[]] ),
+	at( updates([make_not(hit_man(right))]) ),
+	at( query(save_five,Sol), []), % failing
+	at( updates([not make_not(hit_man(right))]) ),
+	at( query(save_five,Sol), Sol, [[]*[]] ),
 	endTest.
+
+
+
