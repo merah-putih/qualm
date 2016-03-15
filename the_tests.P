@@ -1,4 +1,5 @@
 % Automation of QUALM tests
+% We could use something like SWI's Prolog unit tests, but this will do
 
 :- import variant/2 from subsumes. 
 :- import conset/2, conget/2 from machine.
